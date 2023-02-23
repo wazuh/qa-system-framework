@@ -2,15 +2,15 @@
 Module to test the only_new_events parameter of FileRegexMonitor.
 
 Test cases:
-- Case 1: Log a new event in a empty file while monitoring.
-    - case 1.1 [only_new_events enabled]
-    - case 1.2 [only_new_events disabled]
-- Case 2: Pre-logged event and does not log anything while monitoring.
-    - case 2.1 [only_new_events enabled]
-    - case 2.2 [only_new_events disabled]
-- Case 3: Start monitoring in a empty file and does not log anything.
-    - case 3.1 [only_new_events enabled]
-    - case 3.2 [only_new_events disabled]
+    - Case 1: Log a new event in a empty file while monitoring.
+        - case 1.1 [only_new_events enabled]
+        - case 1.2 [only_new_events disabled]
+    - Case 2: Pre-logged event and does not log anything while monitoring.
+        - case 2.1 [only_new_events enabled]
+        - case 2.2 [only_new_events disabled]
+    - Case 3: Start monitoring in a empty file and does not log anything.
+        - case 3.1 [only_new_events enabled]
+        - case 3.2 [only_new_events disabled]
 """
 
 import time

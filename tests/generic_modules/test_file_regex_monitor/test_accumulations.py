@@ -2,9 +2,9 @@
 Module to test the accumulations parameter of FileRegexMonitor.
 
 Test cases:
-- Case 1: Pre-logged event, log another event while monitoring and expect 2 matches.
-- Case 2: Log 2 events while monitoring and expect 2 matches
-- Case 3: Log one event while monitoring and expect 2 matches.
+    - Case 1: Pre-logged event, log another event while monitoring and expect 2 matches.
+    - Case 2: Log 2 events while monitoring and expect 2 matches
+    - Case 3: Log one event while monitoring and expect 2 matches.
 """
 
 import time
