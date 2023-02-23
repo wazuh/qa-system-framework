@@ -5,6 +5,7 @@ Util functions to use in the framework testing.
 import re
 
 CUSTOM_REGEX = r'.*wazuh-modulesd:aws-s3: INFO: Executing Service Analysis'
+DEFAULT_LOG_MESSAGE = '2023/02/14 09:49:47 wazuh-modulesd:aws-s3: INFO: Executing Service Analysis\n'
 
 
 def custom_callback(line):
@@ -16,7 +17,7 @@ def custom_callback(line):
     Returns:
         boolean: True if log line matches with the callback, False otherwise.
     """
-    match = re.match(CUSTOM_REGEX, line)
+    match = re.match(DEFAULT_LOG_MESSAGE, line)
     return True if match else None
 
 

@@ -77,6 +77,7 @@ class FileRegexMonitorError(QAFrameworkException):
     def __init__(self, message, color=True, traceback=True):
         super().__init__(message, color, traceback)
 
+
 class TimeoutError(QAFrameworkException):
     def __init__(self, message, color=True, traceback=True):
         super().__init__(message, color, traceback)
