@@ -1,13 +1,27 @@
+"""
+Module to test the only_new_events parameter of FileRegexMonitor.
+
+Test cases:
+- Case 1: Log a new event in a empty file while monitoring.
+    - case 1.1 [only_new_events enabled]
+    - case 1.2 [only_new_events disabled]
+- Case 2: Pre-logged event and does not log anything while monitoring.
+    - case 2.1 [only_new_events enabled]
+    - case 2.2 [only_new_events disabled]
+- Case 3: Start monitoring in a empty file and does not log anything.
+    - case 3.1 [only_new_events enabled]
+    - case 3.2 [only_new_events disabled]
+"""
+
 import time
 import pytest
 
-from wazuh_qa_framework.meta_testing.utils import custom_callback, append_log
+from wazuh_qa_framework.meta_testing.utils import custom_callback, append_log, DEFAULT_LOG_MESSAGE
 from wazuh_qa_framework.generic_modules.monitoring.file_regex_monitor import FileRegexMonitor
 from wazuh_qa_framework.generic_modules.exceptions.exceptions import TimeoutError
 from wazuh_qa_framework.generic_modules.threading.thread import Thread
 
 
-LOG_MESSAGE = '2023/02/14 09:49:47 wazuh-modulesd:aws-s3: INFO: Executing Service Analysis'
 EXPECTED_EXCEPTION_ERROR_MESSAGE = 'FileRegexMonitor has not raised a TimeoutError exception when it was expected'
 
 
@@ -42,9 +56,9 @@ def test_only_new_events_case_1(only_new_events, expected_exception, create_dest
 
     # Waiting time for log to be written
     time.sleep(0.25)
-    append_log(log_file, LOG_MESSAGE)
+    append_log(log_file, DEFAULT_LOG_MESSAGE)
 
-    # Check that the callback has been triggered and no exception has been raised
+    # Check if the callback has been triggered and if a timeout exception has been raised
     if expected_exception:
         with pytest.raises(TimeoutError):
             file_regex_monitor_process.join()
@@ -78,7 +92,7 @@ def test_only_new_events_case_2(only_new_events, expected_exception, create_dest
     log_file = create_destroy_sample_file
 
     # Add a log message
-    append_log(log_file, LOG_MESSAGE)
+    append_log(log_file, DEFAULT_LOG_MESSAGE)
 
     # Waiting time for log to be written
     time.sleep(0.25)
@@ -89,6 +103,7 @@ def test_only_new_events_case_2(only_new_events, expected_exception, create_dest
     file_regex_monitor_process = Thread(target=FileRegexMonitor, parameters=file_regex_monitor_parameters)
     file_regex_monitor_process.start()
 
+    # Check if the callback has been triggered and if a timeout exception has been raised
     if expected_exception:
         with pytest.raises(TimeoutError):
             file_regex_monitor_process.join()
@@ -126,7 +141,7 @@ def test_only_new_events_case_3(only_new_events, expected_exception, create_dest
     file_regex_monitor_process = Thread(target=FileRegexMonitor, parameters=file_regex_monitor_parameters)
     file_regex_monitor_process.start()
 
-    # Check that the the file regex monitor has raised the timeout exception
+    # Check if the callback has been triggered and if a timeout exception has been raised
     if expected_exception:
         with pytest.raises(TimeoutError):
             file_regex_monitor_process.join()
