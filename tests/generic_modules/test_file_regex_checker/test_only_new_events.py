@@ -2,7 +2,7 @@ import time
 import pytest
 
 from wazuh_qa_framework.meta_testing.utils import custom_callback, append_log
-from wazuh_qa_framework.generic_modules.monitoring.file_tailer import FileRegexMonitor
+from wazuh_qa_framework.generic_modules.monitoring.file_regex_monitor import FileRegexMonitor
 from wazuh_qa_framework.generic_modules.exceptions.exceptions import TimeoutError
 from wazuh_qa_framework.generic_modules.threading.thread import Thread
 
@@ -35,7 +35,7 @@ def test_only_new_events_case_1(only_new_events, expected_exception, create_dest
     log_file = create_destroy_sample_file
 
     # Start the file regex monitoring
-    file_regex_monitor_parameters = {'tailed_file': log_file, 'callback': custom_callback, 'timeout': 5,
+    file_regex_monitor_parameters = {'monitored_file': log_file, 'callback': custom_callback, 'timeout': 5,
                                      'only_new_events': only_new_events}
     file_regex_monitor_process = Thread(target=FileRegexMonitor, parameters=file_regex_monitor_parameters)
     file_regex_monitor_process.start()
@@ -80,8 +80,11 @@ def test_only_new_events_case_2(only_new_events, expected_exception, create_dest
     # Add a log message
     append_log(log_file, LOG_MESSAGE)
 
+    # Waiting time for log to be written
+    time.sleep(0.25)
+
     # Start the file regex monitoring
-    file_regex_monitor_parameters = {'tailed_file': log_file, 'callback': custom_callback, 'timeout': 1,
+    file_regex_monitor_parameters = {'monitored_file': log_file, 'callback': custom_callback, 'timeout': 1,
                                      'only_new_events': only_new_events}
     file_regex_monitor_process = Thread(target=FileRegexMonitor, parameters=file_regex_monitor_parameters)
     file_regex_monitor_process.start()
@@ -118,7 +121,7 @@ def test_only_new_events_case_3(only_new_events, expected_exception, create_dest
     log_file = create_destroy_sample_file
 
     # Start the file regex monitoring
-    file_regex_monitor_parameters = {'tailed_file': log_file, 'callback': custom_callback, 'timeout': 1,
+    file_regex_monitor_parameters = {'monitored_file': log_file, 'callback': custom_callback, 'timeout': 1,
                                      'only_new_events': only_new_events}
     file_regex_monitor_process = Thread(target=FileRegexMonitor, parameters=file_regex_monitor_parameters)
     file_regex_monitor_process.start()
