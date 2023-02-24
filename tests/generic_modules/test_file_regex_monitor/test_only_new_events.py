@@ -62,7 +62,7 @@ def test_only_new_events_case_1(only_new_events, expected_exception, create_dest
     if expected_exception:
         with pytest.raises(TimeoutError):
             file_regex_monitor_process.join()
-            assert False, EXPECTED_EXCEPTION_ERROR_MESSAGE
+            pytest.fail(EXPECTED_EXCEPTION_ERROR_MESSAGE)
     else:
         file_regex_monitor_process.join()
 
@@ -107,7 +107,7 @@ def test_only_new_events_case_2(only_new_events, expected_exception, create_dest
     if expected_exception:
         with pytest.raises(TimeoutError):
             file_regex_monitor_process.join()
-            assert False, EXPECTED_EXCEPTION_ERROR_MESSAGE
+            pytest.fail(EXPECTED_EXCEPTION_ERROR_MESSAGE)
     else:
         file_regex_monitor_process.join()
 
@@ -145,6 +145,6 @@ def test_only_new_events_case_3(only_new_events, expected_exception, create_dest
     if expected_exception:
         with pytest.raises(TimeoutError):
             file_regex_monitor_process.join()
-            assert False, 'Nothing has been logged and the FileRegexMonitor has not raised the TimeoutError exception'
+            pytest.fail('Nothing has been logged and the FileRegexMonitor has not raised the TimeoutError exception')
     else:
         file_regex_monitor_process.join()

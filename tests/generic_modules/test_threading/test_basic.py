@@ -60,4 +60,4 @@ def test_raise_exception():
     # Check that the thread exception has been propagated to the parent process
     with pytest.raises(RuntimeError):
         thread.join()
-        assert False, 'The thread exception has not been propagated to the parent process'
+        pytest.fail('The thread exception has not been propagated to the parent process')

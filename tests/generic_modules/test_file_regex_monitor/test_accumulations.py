@@ -130,4 +130,4 @@ def test_accumulations_case_3(create_destroy_sample_file):
     # Check that the callback has been triggered and no exception has been raised
     with pytest.raises(TimeoutError):
         file_regex_monitor_process.join()
-        assert False, 'A TimeoutError exception has not been generated when we write 1 event and expect 2'
+        pytest.fail('A TimeoutError exception has not been generated when we write 1 event and expect 2')
