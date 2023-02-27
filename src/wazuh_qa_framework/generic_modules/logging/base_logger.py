@@ -176,6 +176,28 @@ class BaseLogger(ABC):
     def output_color(self, new_output_color):
         self.__output_color = new_output_color
 
+    def log(self, message, level='info'):
+        """DEBUG logging.
+
+        Args:
+            message (str): Logging message.
+            level (str): Log level.
+        """
+        custom_message = f"{LOG_COLORS[level]}{message}{COLORS['CLEAR']}" if self.output_color else message
+
+        if level == 'debug':
+            self.logger.debug(custom_message)
+        elif level == 'info':
+            self.logger.info(custom_message)
+        elif level == 'warning':
+            self.logger.warning(custom_message)
+        elif level == 'error':
+            self.logger.error(custom_message)
+        elif level == 'critical':
+            self.logger.critical(custom_message)
+        else:
+            raise ValidationError(f"{level} is not a valid level. Allowed ones: {list(LEVELS.keys())}")
+
     def debug(self, message):
         """DEBUG logging.
 
