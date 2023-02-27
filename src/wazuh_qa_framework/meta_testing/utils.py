@@ -40,3 +40,10 @@ def append_log(file, content):
     """
     with open(file, 'a') as _file:
         _file.write(content)
+
+
+def read_file(file):
+    with open(file, 'r') as _file:
+        data = _file.read()
+
+    return data
