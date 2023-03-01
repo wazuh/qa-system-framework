@@ -5,7 +5,6 @@
 import logging
 import sys
 import os
-from abc import ABC
 
 from wazuh_qa_framework.generic_modules.exceptions.exceptions import ValidationError
 
@@ -42,7 +41,7 @@ FORMATERS = {
 }
 
 
-class BaseLogger(ABC):
+class BaseLogger():
     """Logger class to manage modules logging.
 
     Args:
