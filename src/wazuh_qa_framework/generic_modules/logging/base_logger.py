@@ -1,7 +1,6 @@
-"""Custom logging module.
+"""Custom logging module. This module contains the following:
 
-Classes:
-  - Logger()
+- BaseLogger()
 """
 import logging
 import sys
@@ -75,22 +74,50 @@ class BaseLogger(ABC):
 
     @property
     def name(self):
+        """Getter to obtain name attribute.
+
+        Returns:
+            str: Logger name.
+        """
         return self.__name
 
     @name.setter
     def name(self, new_name):
+        """Setter of name attribute.
+
+        Args:
+            new_name (str): Logger new name.
+        """
         self.__name = new_name
 
     @property
     def logger(self):
+        """Getter to obtain logger attribute.
+
+        Returns:
+            logging.Logger: Logger object.
+        """
         return self.__logger
 
     @property
     def level(self):
+        """Getter to obtain level attribute.
+
+        Returns:
+            str: Logger level.
+        """
         return self.__level
 
     @level.setter
     def level(self, new_level):
+        """Setter of level attribute.
+
+        Args:
+            new_level (str): New logger level.
+
+        Raises:
+            ValidationError: If new level is wrong.
+        """
         if new_level.lower() in LEVELS.keys():
             self.__level = LEVELS[new_level.lower()]
             self.__logger.level = self.__level
@@ -99,10 +126,23 @@ class BaseLogger(ABC):
 
     @property
     def formatter(self):
+        """Getter to obtain formatter attribute.
+
+        Returns:
+            str: Logger formatter.
+        """
         return self.__formatter
 
     @formatter.setter
     def formatter(self, new_formatter):
+        """Setter of level attribute.
+
+        Args:
+            new_formatter (str): New logger formatter.
+
+        Raises:
+            ValidationError: If new formatter is wrong.
+        """
         if new_formatter in FORMATERS.keys():
             self.__formatter = FORMATERS[new_formatter]
         else:
@@ -112,10 +152,23 @@ class BaseLogger(ABC):
 
     @property
     def logging_file(self):
+        """Getter to obtain logging_file attribute.
+
+        Returns:
+            str: Logging file path.
+        """
         return self.__logging_file
 
     @logging_file.setter
     def logging_file(self, new_logging_file):
+        """Setter of logging_file attribute.
+
+        Args:
+            new_logging_file (str): New logging file.
+
+        Raises:
+            ValidationError: If logging file does not exist, is not a file or is not readable.
+        """
         if new_logging_file:
             if not os.path.exists(new_logging_file):
                 raise ValidationError(f"File {new_logging_file} does not exist")
@@ -130,13 +183,25 @@ class BaseLogger(ABC):
 
         self.__logging_file = new_logging_file
 
-
     @property
     def handlers(self):
+        """Getter to obtain handlers attribute.
+
+        Returns:
+            list(str): Logger handlers.
+        """
         return self.__handlers
 
     @handlers.setter
     def handlers(self, new_handlers):
+        """Setter of handlers attribute.
+
+        Args:
+            new_handlers (list(str)): New logger handlers.
+
+        Raises:
+            ValidationError: If the handlers are not expected/correct.
+        """
         handlers = new_handlers if new_handlers is not None else ['sys_output']
 
         if type(handlers) != list:
@@ -170,18 +235,31 @@ class BaseLogger(ABC):
 
     @property
     def output_color(self):
+        """Getter to obtain output_color attribute.
+
+        Returns:
+            boolean: True if output color is enabled, False otherwise.
+        """
         return self.__output_color
 
     @output_color.setter
     def output_color(self, new_output_color):
+        """Setter of output_color attribute.
+
+        Args:
+            new_output_color (boolean): New output color value.
+        """
         self.__output_color = new_output_color
 
     def log(self, message, level='info'):
-        """DEBUG logging.
+        """Log a specific level message.
 
         Args:
             message (str): Logging message.
             level (str): Log level.
+
+        Raises:
+            ValidationError: If log level is wrong.
         """
         custom_message = f"{LOG_COLORS[level]}{message}{COLORS['CLEAR']}" if self.output_color else message
 
