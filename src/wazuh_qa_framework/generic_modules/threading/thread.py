@@ -2,9 +2,6 @@
 Custom threading module for wrapping threading.Thread module and allowing to raise the thread exception to the parent
 process.
 
-Classes
--------
-
 - Thread(threading.Thread):
     - run
     - start
