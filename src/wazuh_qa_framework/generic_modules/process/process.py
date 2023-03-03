@@ -24,7 +24,8 @@ class Process:
         command (str or list(str)): Command (string or splitted in list) to run.
         capture_stdout (boolean): True for capturing the process stdout, False otherwise.
         capture_stderr (boolean): True for capturing the process stderr, False otherwise.
-        wait (boolean): True for waiting until the process is finished, False otherwise.
+        wait (boolean): True for waiting until the process is finished, False otherwise. Important note: If we capture
+                        the stdout or stderr the process will act as wait=True.
         timeout (int): Num seconds to wait until the process is finished. If it's exceeded, exception will be generated.
 
     Attributes:
@@ -50,12 +51,21 @@ class Process:
         self.return_code = None
 
     def __str__(self):
+        """Redefine the process object representation.
+
+        Returns:
+            str: Process object representation.
+        """
         attributes = self.__dict__
         del(attributes['process'])
         return json.dumps(attributes)
 
     def run(self):
-        """Run the process"""
+        """Run the process
+
+        Raises:
+            subprocess.TimeoutExpired: If the process time taken is grater than the timeout set.
+        """
         args = {
             'args': self.command,
             'shell': self.shell,
@@ -67,14 +77,17 @@ class Process:
         if self.capture_stderr:
             args['stderr'] = subprocess.PIPE
 
+        # Run the process
         self.process = psutil.Popen(**args)
 
+        # If we capture the stdout or stderr, we have to wait until process is finished and save it into attributes.
         if self.capture_stdout or self.capture_stderr:
             output = self.process.communicate(timeout=self.timeout)
             self.stdout = output[0].decode() if type(output[0]) is bytes else output[0]
             self.stderr = output[1].decode() if type(output[1]) is bytes else output[1]
             self.return_code = self.process.returncode
 
+        # If we set wait=True, we can set the return code.
         if not(self.capture_stdout or self.capture_stderr) and self.wait:
             self.return_code = self.process.wait(timeout=self.timeout)
 
