@@ -39,6 +39,7 @@ class WindowsProcess(Process):
     """
     def __init__(self, command, capture_stdout=False, capture_stderr=False, wait=False, timeout=None):
         if type(command) is str:
+            # Switch the character encoding to UTF-8
             windows_command = f"chcp 65001 >NUL & powershell.exe \"{command}\""
         else:
             raise ValidationError('The type of command variable is not the expected one. Allowed only string')
