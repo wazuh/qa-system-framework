@@ -1,5 +1,7 @@
 import pytest
 import os
+import sys
+import logging
 from tempfile import gettempdir
 
 DEFAULT_SAMPLE_FILE = os.path.join(gettempdir(), 'file.log')
@@ -18,4 +20,9 @@ def create_destroy_sample_file(request):
 
     # Remove the file
     if os.path.exists(file):
+        if sys.platform == 'win32':
+            # Shutdown logging. Needed because on Windows we can't remove the logging file if the file handler is set
+            # and up.
+            logging.shutdown()
+
         os.remove(file)
