@@ -1,14 +1,17 @@
 """
 Module to build a tool that allow us to monitor a file content and check if the content matches with a specified
-callback. It contains the following:
+callback.
 
-- FileRegexMonitor
+We can configure this tools to check from the beggining of file or just check new lines from monitoring time. If the
+callback is not matched, a TimeoutError exception will be raised.
+
+The monitoring will start as soon as the object is created. We don't need to do anymore.
 """
 
 import os
 import time
 
-from wazuh_qa_framework.generic_modules.exceptions.exceptions import FileRegexMonitorError, TimeoutError
+from wazuh_qa_framework.generic_modules.exceptions.exceptions import ValidationError, TimeoutError
 
 
 class FileRegexMonitor:
@@ -40,22 +43,22 @@ class FileRegexMonitor:
         self.only_new_events = only_new_events
         self.error_message = error_message
 
-        self.__validate_monitored_file()
+        self.__validate_parameters()
         self.__start()
 
-    def __validate_monitored_file(self):
+    def __validate_parameters(self):
         """Validate if the specified file can be monitored."""
         # Check that the monitored file exists
         if not os.path.exists(self.monitored_file):
-            raise FileRegexMonitorError(f"File {self.monitored_file} does not exist")
+            raise ValidationError(f"File {self.monitored_file} does not exist")
 
         # Check that the monitored file is a file
         if not os.path.isfile(self.monitored_file):
-            raise FileRegexMonitorError(f"{self.monitored_file} is not a file")
+            raise ValidationError(f"{self.monitored_file} is not a file")
 
         # Check that the program can read the content of the file
         if not os.access(self.monitored_file, os.R_OK):
-            raise FileRegexMonitorError(f"{self.monitored_file} is not readable")
+            raise ValidationError(f"{self.monitored_file} is not readable")
 
     def __start(self):
         """Start the file regex monitoring"""
