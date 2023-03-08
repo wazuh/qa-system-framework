@@ -1,0 +1,17 @@
+- name: utf_8
+  parameters:
+    encoding: UTF-16
+    pre_text: hello world
+    text: matching string
+
+- name: latin_1
+  parameters:
+    encoding: 'ISO-8859-1'
+    pre_text: ÿÿÿÿ
+    text: ÿð¤¢é
+
+- name: utf_16
+  parameters:
+    encoding: 'UTF-16'
+    pre_text: ЄЄЄЄ
+    text: ЄЃЂ
