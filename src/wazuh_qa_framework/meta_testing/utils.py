@@ -8,7 +8,7 @@ import sys
 import logging
 
 CUSTOM_REGEX = r'.*wazuh-modulesd:aws-s3: INFO: Executing Service Analysis'
-DEFAULT_LOG_MESSAGE = '2023/02/14 09:49:47 wazuh-modulesd:aws-s3: INFO: Executing Service Analysis\n'
+DEFAULT_LOG_MESSAGE = '2023/02/14 09:49:47 wazuh-modulesd:aws-s3: INFO: Executing Service Analysis'
 
 
 def custom_callback(line):
@@ -34,25 +34,26 @@ def clean_file(file):
         _file.write('')
 
 
-def append_log(file, content):
+def append_log(file, content, encoding='utf-8'):
     """Append a string content to the specified file.
 
     Args:
         file (str): File path.
         content (str): Content to add.
+        encoding (str): Characters encoding.
     """
-    with open(file, 'a') as _file:
+    with open(file, 'a', encoding=encoding) as _file:
         _file.write(content)
 
 
-def write_file(file, content=''):
+def write_file(file, content='', encoding='utf-8'):
     """Write content to file.
 
     Args:
         file (str): File path.
         content (str): Content to write.
     """
-    with open(file, 'w') as _file:
+    with open(file, 'w', encoding=encoding) as _file:
         _file.write(content)
 
 
