@@ -1,7 +1,6 @@
 name: Code analysis
 on:
   - pull_request
-  - push
 jobs:
   Linting:
     runs-on: ubuntu-20.04

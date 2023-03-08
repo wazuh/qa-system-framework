@@ -6,7 +6,11 @@ Module to manage custom exceptions. This module contains the following:
 - RuntimeError(QAFrameworkException)
 - ConnectionError(QAFrameworkException)
 - ValidationError(QAFrameworkException)
+- FileRegexMonitorError(QAFrameworkException)
+- TimeoutError(QAFrameworkException)
+- ElementNotFoundError(QAFrameworkException)
 """
+
 import sys
 
 
@@ -67,5 +71,17 @@ class ValidationError(QAFrameworkException):
 
 class ProcessError(QAFrameworkException):
     """Class to manage process error cases."""
+    def __init__(self, message, color=True, traceback=True):
+        super().__init__(message, color, traceback)
+
+
+class TimeoutError(QAFrameworkException):
+    """Class to manage timeout error cases."""
+    def __init__(self, message, color=True, traceback=True):
+        super().__init__(message, color, traceback)
+
+
+class ElementNotFoundError(QAFrameworkException):
+    """Class to manage elements not found cases."""
     def __init__(self, message, color=True, traceback=True):
         super().__init__(message, color, traceback)

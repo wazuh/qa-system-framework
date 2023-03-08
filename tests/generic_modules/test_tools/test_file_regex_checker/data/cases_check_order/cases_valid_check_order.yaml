@@ -1,0 +1,17 @@
+- name: Patterns match in order with check_order enabled
+  parameters:
+    file_content: 1\n2\n3\n4\n5\n
+    patterns: [1, 2, 3, 4, 5]
+    check_order: true
+
+- name: Patterns match with check_order disabled
+  parameters:
+    file_content: 1\n2\n3\n4\n5\n
+    patterns: [1, 2, 3, 4, 5]
+    check_order: false
+
+- name: Unorganized patterns match with check_order disabled
+  parameters:
+    file_content: 1\n2\n3\n4\n5\n
+    patterns: [1, 2, 3, 5, 4]
+    check_order: false
