@@ -17,7 +17,7 @@ import time
 import pytest
 
 from wazuh_qa_framework.meta_testing.utils import custom_callback, append_log, DEFAULT_LOG_MESSAGE
-from wazuh_qa_framework.generic_modules.monitoring.file_regex_monitor import FileRegexMonitor
+from wazuh_qa_framework.generic_modules.tools.file_regex_monitor import FileRegexMonitor
 from wazuh_qa_framework.generic_modules.exceptions.exceptions import TimeoutError
 from wazuh_qa_framework.generic_modules.threading.thread import Thread
 
