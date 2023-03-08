@@ -5,15 +5,15 @@
 
 - name: latin_1
   parameters:
-    encoding: 'ISO-8859-1'
+    encoding: ISO-8859-1
     text: ÿð¤¢é
 
 - name: utf_16
   parameters:
-    encoding: 'UTF-16'
+    encoding: UTF-16
     text: ЄЃЂ
 
 - name: empty
   parameters:
-    encoding: 'utf-8'
+    encoding: utf-8
     text: ''

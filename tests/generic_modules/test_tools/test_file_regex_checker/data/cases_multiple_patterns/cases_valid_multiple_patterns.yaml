@@ -1,7 +1,7 @@
 - name: Matching patterns - multiple elements
   parameters:
     file_content: 1\n2\n3\n4\n5\n
-    patterns: [1, 2, 3, 4 ,5]
+    patterns: [1, 2, 3, 4, 5]
 
 - name: Matching patterns - single element
   parameters:

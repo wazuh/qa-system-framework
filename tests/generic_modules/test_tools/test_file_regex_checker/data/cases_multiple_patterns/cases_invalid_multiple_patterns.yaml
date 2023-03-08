@@ -1,7 +1,7 @@
 - name: Missing pattern - multiple elements
   parameters:
     file_content: 1\n2\n4\n5\n
-    patterns: [1, 2, 3, 4 ,5]
+    patterns: [1, 2, 3, 4, 5]
     error_message: Missing pattern was not detected
 
 - name: Missing pattern - single element
