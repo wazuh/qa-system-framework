@@ -20,7 +20,7 @@ jobs:
         run: python setup.py install --user
 
       - name: Run unit tests
-        run: python -m pytest tests/
+        run: python -m pytest tests/ --tb=short
 
   windows:
     runs-on: windows-2019
@@ -38,4 +38,4 @@ jobs:
         run: python setup.py install --user
 
       - name: Run unit tests
-        run: python -m pytest tests/
+        run: python -m pytest tests/ --tb=short
