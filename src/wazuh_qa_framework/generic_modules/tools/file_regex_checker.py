@@ -5,6 +5,10 @@ For example, if we want to check that a file contains first line 1 and then line
 line 2 appears first and then line 1, or either of them does not appear, an exception will be generated.
 
 >Note: It is important to note that this tool does not monitor, but has to be launched once the logs have been produced.
+
+This module contains the following:
+
+- FileRegexChecker
 """
 
 import re

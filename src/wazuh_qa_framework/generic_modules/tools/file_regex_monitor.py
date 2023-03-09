@@ -6,6 +6,10 @@ We can configure this tools to check from the beggining of file or just check ne
 callback is not matched, a TimeoutError exception will be raised.
 
 The monitoring will start as soon as the object is created. We don't need to do anymore.
+
+This module contains the following:
+
+- FileRegexMonitor
 """
 
 import os

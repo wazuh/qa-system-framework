@@ -1,5 +1,9 @@
 """
 Configuration functions used by tests
+
+This module contains the following:
+
+- get_test_cases_data
 """
 
 import yaml

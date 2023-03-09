@@ -1,5 +1,10 @@
 """
-Module to manager custom file utils functions
+Module to manager custom file utils functions. The functions related to working with files will be grouped in order
+to encapsulate behaviors and avoid code redundancy, in addition to speeding up development.
+
+This module contains the following functions:
+
+- get_file_encoding
 """
 
 import os

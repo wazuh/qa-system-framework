@@ -1,5 +1,9 @@
 """
-Module to manage custom exceptions. This module contains the following:
+Module to manage custom exceptions.
+
+The purpose of each of these customized exceptions is to be able to identify and manage each one independently.
+
+This module contains the following:
 
 - QAFrameworkException(Exception)
 - ValueError(QAFrameworkException)

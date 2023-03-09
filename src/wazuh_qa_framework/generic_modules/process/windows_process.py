@@ -1,6 +1,8 @@
 """
 Module to build a tool that allow us to run local Windows commands using powershell and process the output in a custom
-way. It contains the following:
+way.
+
+This module contains the following:
 
 - WindowsProcess(Process):
     - run

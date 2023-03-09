@@ -1,8 +1,9 @@
 """
-Module to build a tool that allow us to run local commands and process the output in a custom way. It contains
-the following:
+Module to build a tool that allow us to run local commands and process the output in a custom way.
 
-- Process():
+This module contains the following:
+
+- Process:
     - run
     - get_stdout
     - get_stderr

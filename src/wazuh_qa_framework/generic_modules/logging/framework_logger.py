@@ -1,13 +1,21 @@
-"""Custom logging module to log framework messages. This module contains the following:
+"""Custom logging module to log framework messages.
 
-- FrameworkLogger(BaseLogger)
+This module contains the following:
+
+- FrameworkLogger(BaseLogger):
+    - log
+    - debug
+    - info
+    - warning
+    - error
+    - critical
 """
 
 from wazuh_qa_framework.generic_modules.logging.base_logger import BaseLogger
 
 
 class FrameworkLogger(BaseLogger):
-    """Logger singleton class to manage framework logging.
+    """Singleton logger class to manage framework logging.
 
     Args:
         name (str): Logger name.

@@ -1,6 +1,8 @@
 """
-Custom threading module for wrapping threading.Thread module and allowing to raise the thread exception to the parent
-process.
+Custom threading module for wrapping threading.Thread python module. This custom class allow us to raise the
+thread exception to the parent process.
+
+This module contains the following:
 
 - Thread(threading.Thread):
     - run
@@ -12,7 +14,7 @@ import threading
 
 
 class Thread(threading.Thread):
-    """Class which allows us to upload the thread exception to the parent process.
+    """Class which allows us to propagate the thread exception to the parent process.
 
     Args:
         target (callable): Function to run in the thread.
