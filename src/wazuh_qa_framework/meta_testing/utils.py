@@ -46,6 +46,21 @@ def append_log(file, content, encoding='utf-8'):
         _file.write(content)
 
 
+def read_file(file):
+    """Read a file content.
+
+    Args:
+        file (str): File path.
+
+    Returns:
+        str: File content.
+    """
+    with open(file, 'r') as _file:
+        data = _file.read()
+
+    return data
+
+
 def write_file(file, content='', encoding='utf-8'):
     """Write content to file.
 
