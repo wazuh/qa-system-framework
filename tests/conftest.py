@@ -1,8 +1,9 @@
 import pytest
 import os
-import sys
-import logging
 from tempfile import gettempdir
+
+from wazuh_qa_framework.meta_testing.utils import write_file, remove_file
+
 
 DEFAULT_SAMPLE_FILE = os.path.join(gettempdir(), 'file.log')
 
@@ -11,18 +12,19 @@ DEFAULT_SAMPLE_FILE = os.path.join(gettempdir(), 'file.log')
 def create_destroy_sample_file(request):
     """Create and destroy a sample file"""
     file = getattr(request.module, 'SAMPLE_FILE') if hasattr(request.module, 'SAMPLE_FILE') else DEFAULT_SAMPLE_FILE
-
-    # Create an empty file
-    with open(file, 'a'):
-        pass
+    write_file(file)
 
     yield file
 
-    # Remove the file
-    if os.path.exists(file):
-        if sys.platform == 'win32':
-            # Shutdown logging. Needed because on Windows we can't remove the logging file if the file handler is set
-            # and up.
-            logging.shutdown()
+    remove_file(file)
 
-        os.remove(file)
+
+@pytest.fixture
+def create_destroy_sample_file_with_content(request, file_content):
+    """Create and destroy a sample file with specified content"""
+    file = getattr(request.module, 'SAMPLE_FILE') if hasattr(request.module, 'SAMPLE_FILE') else DEFAULT_SAMPLE_FILE
+    write_file(file, content=file_content)
+
+    yield file
+
+    remove_file(file)
