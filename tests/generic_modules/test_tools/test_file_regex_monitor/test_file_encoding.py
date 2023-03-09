@@ -9,6 +9,7 @@ Test cases:
 
 import time
 import os
+import sys
 import pytest
 
 from wazuh_qa_framework.generic_modules.tools.file_regex_monitor import FileRegexMonitor
@@ -39,12 +40,14 @@ def custom_callback(line):
     Returns:
         boolean: True if pattern has matched, None otherwise.
     """
-    if line in ['matching string', 'ЄЃЂ', 'ÿð¤¢é']:
+    print(f"Line = {line.encode().decode('ISO-8859-1')}")
+    if line.replace('\n', '') in ['matching string', 'ЄЃЂ', 'ÿð¤¢é']:
         return True
 
     return None
 
 
+@pytest.mark.skipif(sys.platform == 'win32', reason='Not supported for Windows')
 @pytest.mark.parametrize('case_parameters', t1_case_parameters, ids=t1_case_names)
 def test_pre_encoding(case_parameters, create_destroy_sample_file):
     """Start monitoring a written log file and write a new line with specific enconding.
@@ -67,7 +70,7 @@ def test_pre_encoding(case_parameters, create_destroy_sample_file):
     log_file = create_destroy_sample_file
 
     # Write initial log line
-    append_log(log_file, f"{case_parameters['pre_text']}", encoding=case_parameters['encoding'])
+    append_log(log_file, f"{case_parameters['pre_text']}\n", encoding=case_parameters['encoding'])
 
     # Start the file regex monitoring
     file_regex_monitor_parameters = {'monitored_file': log_file, 'callback': custom_callback, 'timeout': 1,
@@ -77,12 +80,13 @@ def test_pre_encoding(case_parameters, create_destroy_sample_file):
 
     # Waiting time for log to be written
     time.sleep(0.25)
-    append_log(log_file, case_parameters['text'], encoding=case_parameters['encoding'])
+    append_log(log_file, f"{case_parameters['text']}\n", encoding=case_parameters['encoding'])
 
     # Check that callback has been triggered
     file_regex_monitor_process.join()
 
 
+@pytest.mark.skipif(sys.platform == 'win32', reason='Not supported for Windows')
 @pytest.mark.parametrize('case_parameters', t2_case_parameters, ids=t2_case_names)
 def test_post_encoding(case_parameters, create_destroy_sample_file):
     """Start monitoring an empty log file and write a new line with specific encoding.
@@ -117,6 +121,7 @@ def test_post_encoding(case_parameters, create_destroy_sample_file):
     file_regex_monitor_process.join()
 
 
+@pytest.mark.skipif(sys.platform == 'win32', reason='Not supported for Windows')
 def test_new_encoding(create_destroy_sample_file):
     """Start monitoring a written log file and write a new line with different encoding.
 

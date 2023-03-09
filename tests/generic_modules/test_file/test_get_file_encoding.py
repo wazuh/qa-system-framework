@@ -56,6 +56,7 @@ def create_ephemeral_file(encoding, text):
     remove_file(DEFAULT_SAMPLE_FILE)
 
 
+@pytest.mark.skipif(sys.platform == 'win32', reason='Not supported for Windows')
 @pytest.mark.parametrize('encoding, text', t1_case_parameters, ids=t1_case_names)
 def test_get_file_encoding(encoding, text, create_ephemeral_file):
     """Write encoded strings and check that it detected by the function.
