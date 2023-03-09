@@ -43,7 +43,8 @@ def test_levels(level, create_destroy_sample_file, expected_lines):
         - create_destroy_sample_file (fixture): Create an empty file and remove it after finishing.
         - expected_lines (int): Parametrized variable.
     """
-    logger = BaseLogger(name='test', level=level, output_color=False, handlers=['file'], logging_file=SAMPLE_FILE)
+    logger = BaseLogger(name=f"test_{expected_lines}", level=level, output_color=False, handlers=['file'],
+                        logging_file=SAMPLE_FILE)
     log_message = 'hello world'
     levels = ['debug', 'info', 'warning', 'error', 'critical']
 

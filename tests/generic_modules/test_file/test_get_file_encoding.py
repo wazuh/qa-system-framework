@@ -7,6 +7,7 @@ Test cases:
 """
 
 import os
+import sys
 import pytest
 from tempfile import gettempdir
 
@@ -28,8 +29,10 @@ t1_case_parameters, t1_case_names = get_test_cases_data(t1_cases_path)
 # Convert it to list of tuples to be able to use the values by the fixtures
 t1_case_parameters = [tuple(item.values()) for item in t1_case_parameters]
 
-# invalid check order cases
-t2_cases_path = os.path.join(TEST_CASES_PATH, 'cases_invalid_file_encoding.yaml')
+# Invalid check order cases
+# Invalid case encoding is not supported by Windows, so do this trick to avoid the error
+cases_file = 'cases_valid_file_encoding.yaml' if sys.platform == 'win32' else 'cases_invalid_file_encoding.yaml'
+t2_cases_path = os.path.join(TEST_CASES_PATH, cases_file)
 t2_case_parameters, t2_case_names = get_test_cases_data(t2_cases_path)
 # Convert it to list of tuples to be able to use the values by the fixtures
 t2_case_parameters = [tuple(item.values()) for item in t2_case_parameters]
@@ -53,6 +56,7 @@ def create_ephemeral_file(encoding, text):
     remove_file(DEFAULT_SAMPLE_FILE)
 
 
+@pytest.mark.skipif(sys.platform == 'win32', reason='Not supported for Windows')
 @pytest.mark.parametrize('encoding, text', t1_case_parameters, ids=t1_case_names)
 def test_get_file_encoding(encoding, text, create_ephemeral_file):
     """Write encoded strings and check that it detected by the function.
@@ -73,6 +77,7 @@ def test_get_file_encoding(encoding, text, create_ephemeral_file):
     assert get_file_encoding(DEFAULT_SAMPLE_FILE) == encoding
 
 
+@pytest.mark.skipif(sys.platform == 'win32', reason='Not supported on windows')
 @pytest.mark.parametrize('encoding, text', t2_case_parameters, ids=t2_case_names)
 def test_invalid_get_file_encoding(encoding, text, create_ephemeral_file):
     """Write a non supported encoded string and check that an exception is raised.

@@ -1,13 +1,21 @@
-"""Custom logging module to log pytest messages. This module contains the following:
+"""Custom logging module to log pytest messages.
 
-- PytestLogger(BaseLogger)
+This module contains the following:
+
+- PytestLogger(BaseLogger):
+    - log
+    - debug
+    - info
+    - warning
+    - error
+    - critical
 """
 
 from wazuh_qa_framework.generic_modules.logging.base_logger import BaseLogger
 
 
 class PytestLogger(BaseLogger):
-    """Logger singleton class to manage pytest logging.
+    """Singleton logger class to manage pytest logging.
 
     Args:
         name (str): Logger name.

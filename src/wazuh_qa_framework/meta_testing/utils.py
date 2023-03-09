@@ -1,5 +1,14 @@
 """
 Util functions to use in the framework testing.
+
+This module contains the following:
+
+- custom_callback
+- clean_file
+- append_log
+- read_file
+- write_file
+- remove_file
 """
 
 import re

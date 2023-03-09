@@ -1,6 +1,17 @@
-"""Custom logging module. This module contains the following:
+"""Custom logging module.
 
-- BaseLogger()
+It adds an extra layer on top of the python logging module, in which the logger is auto-configured based on the class
+attributes, and simplifies its use.
+
+This module contains the following:
+
+- BaseLogger
+    - log
+    - debug
+    - info
+    - warning
+    - error
+    - critical
 """
 import logging
 import sys
@@ -41,8 +52,12 @@ FORMATERS = {
 }
 
 
-class BaseLogger():
+class BaseLogger:
     """Logger class to manage modules logging.
+
+    This class defines the main behavior of the loggers and will be used as a base class for the rest of the loggers
+    to be defined. It is recommended that it is only used to define new loggers (as if it were an abstract class, but
+    for now it does not have any abstract method).
 
     Args:
         name (str): Logger name.

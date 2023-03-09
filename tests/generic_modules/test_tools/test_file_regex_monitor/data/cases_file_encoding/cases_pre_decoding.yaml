@@ -1,6 +1,6 @@
 - name: utf_8
   parameters:
-    encoding: UTF-16
+    encoding: UTF-8
     pre_text: hello world
     text: matching string
 
