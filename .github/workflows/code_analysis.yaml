@@ -1,9 +1,8 @@
-name: Code analysis
+name: code_analysis
 on:
   - pull_request
-  - push
 jobs:
-  Linting:
+  linting:
     runs-on: ubuntu-20.04
     steps:
       - name: Download files

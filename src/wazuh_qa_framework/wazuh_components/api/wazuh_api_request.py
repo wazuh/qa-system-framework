@@ -1,18 +1,17 @@
 """
 Module to wrapp the Wazuh API requests. Normally, the developers should not use this class but WazuhAPI one. This class
-is used by WazuhAPI to make and send the API requests. This module contains the following:
+is used by WazuhAPI to make and send the API requests.
 
-Classes
--------
+This module contains the following:
 
-- WazuhAPIRequest():
-    - send(wazuh_api_object)
+- WazuhAPIRequest:
+    - send
 """
 import json
 import requests
 
 from wazuh_qa_framework.generic_modules.request.request import Request
-from wazuh_qa_framework.generic_modules.exceptions import exceptions
+from wazuh_qa_framework.generic_modules.exceptions.exceptions import ConnectionError
 from wazuh_qa_framework.wazuh_components.api.wazuh_api_response import WazuhAPIResponse
 
 
@@ -103,4 +102,4 @@ class WazuhAPIRequest:
         try:
             return WazuhAPIResponse(Request(**request_parameters).send())
         except requests.exceptions.ConnectionError as exception:
-            raise exceptions.RuntimeError(f"Cannot establish connection with {wazuh_api_object.url}") from exception
+            raise ConnectionError(f"Cannot establish connection with {wazuh_api_object.url}") from exception

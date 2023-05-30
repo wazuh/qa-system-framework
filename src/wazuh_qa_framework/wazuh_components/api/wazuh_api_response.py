@@ -1,9 +1,6 @@
 """
 Module to wrapp the Wazuh API responses. This modules contains the following:
 
-Classes
--------
-
 - WazuhAPIResponse
 """
 from http import HTTPStatus

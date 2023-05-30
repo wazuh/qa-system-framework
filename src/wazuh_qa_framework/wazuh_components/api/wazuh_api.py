@@ -1,15 +1,12 @@
 """
 Module to wrapp the main Wazuh API calls. This module contains the following:
 
-Classes
--------
-
 - WazuhAPI:
-    - get_token()
-    - set_token_expiration(num_seconds)
-    - get_api_info()
-    - list_agents()
-    - restart_agent(agent_id)
+    - get_token
+    - set_token_expiration
+    - get_api_info
+    - list_agents
+    - restart_agent
 """
 from base64 import b64encode
 from http import HTTPStatus
@@ -17,7 +14,7 @@ import requests
 
 from wazuh_qa_framework.wazuh_components.api.wazuh_api_request import WazuhAPIRequest
 from wazuh_qa_framework.generic_modules.request.request import GetRequest
-from wazuh_qa_framework.generic_modules.exceptions import exceptions
+from wazuh_qa_framework.generic_modules.exceptions.exceptions import ConnectionError, RuntimeError
 
 
 DEFAULT_USER = 'wazuh'
@@ -28,7 +25,7 @@ DEFAULT_PROTOCOL = 'https'
 DEFAULT_TOKEN_EXPIRATION = 900
 
 
-class WazuhAPI():
+class WazuhAPI:
     """Class to manage the Wazuh API via requests.
 
     Args:
@@ -83,10 +80,10 @@ class WazuhAPI():
             if response.status_code == HTTPStatus.OK:
                 return response.text
 
-            raise exceptions.RuntimeError(f"Error obtaining login token: {response.json()}")
+            raise RuntimeError(f"Error obtaining login token: {response.json()}")
 
         except requests.exceptions.ConnectionError as exception:
-            raise exceptions.ConnectionError(f"Cannot establish connection with {self.url}") from exception
+            raise ConnectionError(f"Cannot establish connection with {self.url}") from exception
 
     def set_token_expiration(self, num_seconds):
         """Set the Wazuh API token expiration.

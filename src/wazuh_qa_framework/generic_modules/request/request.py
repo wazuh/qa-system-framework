@@ -1,4 +1,5 @@
-"""Custom request module wrapping the requests module. This module contains the following:
+"""
+Custom request module wrapping the requests module. This module contains the following:
 
 - Request(object)
     - send()
@@ -7,6 +8,7 @@
 - PutRequest(Request)
 - DeleteRequest(Request)
 """
+
 import requests
 import urllib3
 
