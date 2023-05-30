@@ -5,7 +5,7 @@
 import os
 import re
 
-from wazuh_testing.system.host_manager import HostManager
+from wazuh_qa_framework.system.host_manager import HostManager
 
 DEFAULT_INSTALL_PATH = {
     'linux': '/var/ossec',
@@ -60,20 +60,20 @@ def get_shared_directory_path(custom_installation_path=None, os_host='linux'):
 
 
 def get_group_configuration_directory(custom_installation_path=None, os_host='linux', component='manager',
-                                      group_name='default'):
+                                      group='default'):
     installation_path = custom_installation_path if custom_installation_path else DEFAULT_INSTALL_PATH[os_host]
     group_configuration_path = None
     if component == 'manager':
         group_configuration_path = os.path.join(get_shared_directory_path(custom_installation_path, os_host),
-                                                group_name)
+                                                group)
     else:
         group_configuration_path = os.path.join(get_shared_directory_path(custom_installation_path, os_host))
 
     return group_configuration_path
 
 
-def get_ruleset_directory(custom_installation_path=None, os='linux'):
-    installation_path = custom_installation_path if custom_installation_path else DEFAULT_INSTALL_PATH[os]
+def get_ruleset_directory(custom_installation_path=None, os_name='linux'):
+    installation_path = custom_installation_path if custom_installation_path else DEFAULT_INSTALL_PATH[os_name]
     return os.path.join(installation_path, 'ruleset')
 
 
@@ -121,7 +121,7 @@ def get_wazuh_file_path(custom_installation_path=None, os_host='linux', file_nam
         },
         'custom_rule_directory': {
             'files': ['local_rules.xml'],
-            'path_calculation': lambda filename: os.path.join(get_custom_rules_directory_path(installation_path),
+            'path_calculator': lambda filename: os.path.join(get_custom_rules_directory_path(installation_path),
                                                               filename)
         },
         'group_configuration': {
@@ -135,7 +135,7 @@ def get_wazuh_file_path(custom_installation_path=None, os_host='linux', file_nam
     }
     for files in wazuh_directory_files.values():
         if file_name in files['files']:
-            return files['path_calculation'](file_name)
+            return files['path_calculator'](file_name)
 
 
 class WazuhEnvironmentHandler(HostManager):
@@ -178,12 +178,10 @@ class WazuhEnvironmentHandler(HostManager):
             str: Path of the custom decoders directory
         """
         custom_installation_path = self.get_host_variables(host).get('wazuh_installation_path', None)
-        host_os = self.get_ansible_host_os(host)
         host_component = self.get_ansible_host_component(host)
 
         if host_component == 'manager':
-            custom_decoders_directory_path = get_custom_decoders_directory_path(custom_installation_path,
-                                                                                os_host=host_os)
+            custom_decoders_directory_path = get_custom_decoders_directory_path(custom_installation_path)
         else:
             custom_decoders_directory_path = None
 
@@ -197,12 +195,10 @@ class WazuhEnvironmentHandler(HostManager):
             str: Path of the custom rules directory
         """
         custom_installation_path = self.get_host_variables(host).get('wazuh_installation_path', None)
-        host_os = self.get_ansible_host_os(host)
         host_component = self.get_ansible_host_component(host)
 
         if host_component == 'manager':
-            custom_rules_directory_path = get_custom_rules_directory_path(custom_installation_path,
-                                                                          os_host=host_os)
+            custom_rules_directory_path = get_custom_rules_directory_path(custom_installation_path)
         else:
             custom_rules_directory_path = None
 
@@ -216,11 +212,10 @@ class WazuhEnvironmentHandler(HostManager):
             str: Path of the API directory
         """
         custom_installation_path = self.get_host_variables(host).get('wazuh_installation_path', None)
-        host_os = self.get_ansible_host_os(host)
         host_component = self.get_ansible_host_component(host)
 
         if host_component == 'manager':
-            api_directory = get_api_directory(custom_installation_path, host_os)
+            api_directory = get_api_directory(custom_installation_path)
         else:
             api_directory = None
 
@@ -234,11 +229,10 @@ class WazuhEnvironmentHandler(HostManager):
             str: Path of the API configuration directory
         """
         custom_installation_path = self.get_host_variables(host).get('wazuh_installation_path', None)
-        host_os = self.get_ansible_host_os(host)
         host_component = self.get_ansible_host_component(host)
 
         if host_component == 'manager':
-            api_configuration_directory = get_api_configuration_directory(custom_installation_path, host_os)
+            api_configuration_directory = get_api_configuration_directory(custom_installation_path)
         else:
             api_configuration_directory = None
 
@@ -252,11 +246,10 @@ class WazuhEnvironmentHandler(HostManager):
             str: Path of the alert directory
         """
         custom_installation_path = self.get_host_variables(host).get('wazuh_installation_path', None)
-        host_os = self.get_ansible_host_os(host)
         host_component = self.get_ansible_host_component(host)
 
         if host_component == 'manager':
-            alert_directory_path = get_alert_directory_path(custom_installation_path, host_os)
+            alert_directory_path = get_alert_directory_path(custom_installation_path)
         else:
             alert_directory_path = None
 
@@ -270,11 +263,10 @@ class WazuhEnvironmentHandler(HostManager):
             str: Path of the archives directory
         """
         custom_installation_path = self.get_host_variables(host).get('wazuh_installation_path', None)
-        host_os = self.get_ansible_host_os(host)
         host_component = self.get_ansible_host_component(host)
 
         if host_component == 'manager':
-            archives_directory_path = get_archives_directory_path(custom_installation_path, host_os)
+            archives_directory_path = get_archives_directory_path(custom_installation_path)
         else:
             archives_directory_path = None
 
@@ -320,7 +312,7 @@ class WazuhEnvironmentHandler(HostManager):
         host_component = self.get_ansible_host_component(host)
 
         group_configuration_directory_path = get_group_configuration_directory(custom_installation_path, host_os,
-                                                                               group, host_component)
+                                                                               group=group, component=host_component)
 
         return group_configuration_directory_path
 
