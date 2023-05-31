@@ -40,9 +40,3 @@ class PytestLogger(BaseLogger):
                  output_color=True):
         super().__init__(name=name, level=level, formatter=formatter, handlers=handlers, logging_file=logging_file,
                          output_color=output_color)
-
-    def __new__(self, *args, **kwargs):
-        if self.__instance is None:
-            self.__instance = super().__init__(self, *args, **kwargs)
-
-        return self.__instance

@@ -154,7 +154,7 @@ class HostManager:
 
         return testinfra_host.ansible(ansible_command, check=False)['ping'] == 'pong'
 
-    def copy_file(self, host, src_path, dest_path, remote_src=False, ignore_errors=False):
+    def copy_file(self, host, src_path, dest_path, become=False, windows=False, remote_src=False, ignore_errors=False):
         """Move from src_path to the desired location dest_path for the specified host.
 
         Args:
@@ -247,7 +247,7 @@ class HostManager:
 
         return result
 
-    def truncate_file(self, host, file_path, recreate=True, ignore_errors=False):
+    def truncate_file(self, host, file_path, recreate=True, windows=False, become=False, ignore_errors=False):
         """Truncate a file from the specified host.
 
         Args:
