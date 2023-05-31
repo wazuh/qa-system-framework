@@ -150,9 +150,11 @@ class HostManager:
         """
         testinfra_host = self.get_host(host)
         ansible_command = 'ping' if not windows else 'win_ping'
+        testinfra_host.ansible(ansible_command, check=False)['ping'] == 'pong'
+
         return testinfra_host.ansible(ansible_command, check=False)['ping'] == 'pong'
 
-    def copy_file(self, host, src_path, dest_path, remote_src=False, become=False, windows=False, ignore_errors=False):
+    def copy_file(self, host, src_path, dest_path, remote_src=False, ignore_errors=False):
         """Move from src_path to the desired location dest_path for the specified host.
 
         Args:
@@ -245,7 +247,7 @@ class HostManager:
 
         return result
 
-    def truncate_file(self, host, file_path, recreate=True, windows=False, become=False, ignore_errors=False):
+    def truncate_file(self, host, file_path, recreate=True, ignore_errors=False):
         """Truncate a file from the specified host.
 
         Args:
@@ -515,3 +517,49 @@ class HostManager:
             raise Exception(f"Error getting stats of {path} on host {host}: {result}")
 
         return result
+
+    def get_host_ansible_ip(self, host):
+
+        """Get host used ip by ansible.
+
+        Args:
+            host (str): Hostname
+
+        Returns:
+            str: Host used IP
+        """
+        ansible_ip = self.get_host_variables(host).get('ansible_host', None)
+        return ansible_ip
+
+    def is_windows(self, host):
+        """Check if host is windows
+
+        Args:
+            host (str): Hostname
+
+        Returns:
+            boolean: Host is a windows host
+        """
+        return self.get_host_variables(host)['os_name'] == 'windows'
+
+    def is_linux(self, host):
+        """Check if host is Linux
+
+        Args:
+            host (str): Hostname
+
+        Returns:
+            boolean: Host is a linux host
+        """
+        return self.get_host_variables(host)['os_name'] == 'linux'
+
+    def is_macos(self, host):
+        """Check if host is macos
+
+        Args:
+            host (str): Hostname
+
+        Returns:
+            boolean: Host is a macos host
+        """
+        return self.get_host_variables(host)['os_name'] == 'darwin'
