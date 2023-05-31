@@ -6,6 +6,7 @@ import tempfile
 import testinfra
 import base64
 import os
+import yaml
 from ansible.inventory.manager import InventoryManager
 from ansible.parsing.dataloader import DataLoader
 from ansible.vars.manager import VariableManager
@@ -138,21 +139,20 @@ class HostManager:
 
         return ansible_facts['ansible_facts']['ansible_interfaces']
 
-    def check_connection(self, host, windows=False):
+    def check_connection(self, host):
         """Check if the host is reachable.
 
         Args:
             host (str): Hostname
-            windows (bool): Use windows command
 
         Returns:
             bool: True if the host is reachable, False otherwise
         """
         testinfra_host = self.get_host(host)
-        ansible_command = 'ping' if not windows else 'win_ping'
+        ansible_command = 'win_ping' if self.get_host_variables(host)['os_name'] == 'windows' else 'ping'
         return testinfra_host.ansible(ansible_command, check=False)['ping'] == 'pong'
 
-    def copy_file(self, host, src_path, dest_path, remote_src=False, become=False, windows=False, ignore_errors=False):
+    def copy_file(self, host, src_path, dest_path, remote_src=False, become=False, ignore_errors=False):
         """Move from src_path to the desired location dest_path for the specified host.
 
         Args:
@@ -161,7 +161,6 @@ class HostManager:
             dest_path (str): Destination path
             remote_src (bool): If True, the file is assumed to live on the remote machine, not the controller.
             become (bool): Use sudo
-            windows (bool): Use windows command
             ignore_errors (bool): Ignore errors
 
         Returns:
@@ -171,7 +170,7 @@ class HostManager:
             Exception: If the command execution fails
         """
         testinfra_host = self.get_host(host)
-        ansible_command = 'copy' if not windows else 'win_copy'
+        ansible_command = 'win_copy' if self.get_host_variables(host)['os_name'] == 'windows' else 'copy'
         remote_source = 'yes' if remote_src else 'no'
 
         command_parameters = f"src={src_path} dest={dest_path} remote_src={remote_source}"
@@ -245,14 +244,13 @@ class HostManager:
 
         return result
 
-    def truncate_file(self, host, file_path, recreate=True, windows=False, become=False, ignore_errors=False):
+    def truncate_file(self, host, file_path, recreate=True, become=False, ignore_errors=False):
         """Truncate a file from the specified host.
 
         Args:
             host (str): Hostname
             file_path (str): File path
             recreate (bool, optional): Recreate file. Defaults to True.
-            windows (bool, optional): Windows command. Defaults to False.
             become (bool, optional): Use sudo. Defaults to False.
             ignore_errors (bool, optional): Ignore errors. Defaults to False.
 
@@ -266,10 +264,10 @@ class HostManager:
         result = None
 
         if recreate:
-            ansible_command = 'copy' if not windows else 'win_copy'
+            ansible_command = 'win_copy' if self.get_host_variables(host)['os_name'] == 'windows' else 'copy'
             result = testinfra_host.ansible(ansible_command, f"dest={file_path} content=''", check=False, become=become)
         else:
-            ansible_command = 'file' if not windows else 'win_file'
+            ansible_command = 'win_file' if self.get_host_variables(host)['os_name'] == 'windows' else 'file'
             result = testinfra_host.ansible(ansible_command, f"path={file_path} state=touch", check=False,
                                             become=become)
         if result.get('msg', None) and not ignore_errors:
@@ -277,13 +275,12 @@ class HostManager:
 
         return result
 
-    def remove_file(self, host, file_path, windows=False, become=False, ignore_errors=False):
+    def remove_file(self, host, file_path, become=False, ignore_errors=False):
         """Remove a file from the specified host.
 
         Args:
             host (str): Hostname
             file_path (str): File path
-            windows (bool, optional): Windows command. Defaults to False.
             become (bool, optional): Use sudo. Defaults to False.
             ignore_errors (bool, optional): Ignore errors. Defaults to False.
 
@@ -295,7 +292,8 @@ class HostManager:
         """
 
         testinfra_host = self.get_host(host)
-        ansible_command = 'file' if not windows else 'win_file'
+        
+        ansible_command = 'win_file' if self.get_host_variables(host)['os_name'] == 'windows' else 'file'
         result = testinfra_host.ansible(ansible_command, f"path={file_path} state=absent", check=False, become=become)
 
         if result.get('msg', None) and not ignore_errors:
@@ -303,7 +301,7 @@ class HostManager:
 
         return result
 
-    def modify_file_content(self, host, path, content, become=False, windows=False, ignore_errors=False):
+    def modify_file_content(self, host, path, content, become=False, ignore_errors=False):
         """Create a file with a specified content and copies it to a path.
 
         Args:
@@ -311,7 +309,6 @@ class HostManager:
             path (str): path for the file to create and modify
             content (str, bytes): content to write into the file
             become (bool, optional): Use sudo. Defaults to False.
-            windows (bool, optional): Windows command. Defaults to False.
             ignore_errors (bool, optional): Ignore errors. Defaults to False.
 
         Returns:
@@ -324,7 +321,7 @@ class HostManager:
         with open(tmp_file.name, 'w+') as tmp:
             tmp.write(content)
 
-        result = self.copy_file(host, src_path=tmp_file.name, dest_path=path, become=become, windows=windows)
+        result = self.copy_file(host, src_path=tmp_file.name, dest_path=path, become=become)
 
         if result.get('msg', None) and not ignore_errors:
             raise Exception(f"Error modifying file {path} on host {host}: {result}")
@@ -332,7 +329,7 @@ class HostManager:
         return result
 
     def create_file(self, host, path, content, directory=False, owner=None, group=None, mode=None, become=False,
-                    windows=False, ignore_errors=False):
+                    ignore_errors=False):
         """Create a file with a specified content and copies it to a path.
 
         Args:
@@ -343,7 +340,6 @@ class HostManager:
             group (str): group of the file
             mode (str): mode of the file
             become (bool, optional): Use sudo. Defaults to False.
-            windows (bool, optional): Windows command. Defaults to False.
             ignore_errors (bool, optional): Ignore errors. Defaults to False.
 
         Returns:
@@ -356,8 +352,8 @@ class HostManager:
         tmp_file = tempfile.NamedTemporaryFile()
         with open(tmp_file.name, 'w+') as tmp:
             tmp.write(content)
-
-        ansible_command = 'copy' if not windows else 'win_copy'
+        
+        ansible_command = 'win_copy' if self.get_host_variables(host)['os_name'] == 'windows' else 'copy'
 
         ansible_parameters = f"src={tmp_file.name} dest={path}"
         ansible_parameters += f" owner={owner}" if owner else ''
@@ -371,7 +367,7 @@ class HostManager:
             raise Exception(f"Error creating file {path} on host {host}: {result}")
         return result
 
-    def control_service(self, host, service, state, become=False, windows=False, ignore_errors=False):
+    def control_service(self, host, service, state, become=False, ignore_errors=False):
         """Control a service on a host.
 
             Args:
@@ -379,7 +375,6 @@ class HostManager:
                 service (str): Service name
                 state (str): Service state
                 become (bool, optional): Use sudo. Defaults to False.
-                windows (bool, optional): Windows command. Defaults to False.
                 ignore_errors (bool, optional): Ignore errors. Defaults to False.
 
             Returns:
@@ -389,7 +384,7 @@ class HostManager:
                 Exception: If the service cannot be controlled
         """
         testinfra_host = self.get_host(host)
-        ansible_command = 'service' if not windows else 'win_service'
+        ansible_command = 'win_service' if self.get_host_variables(host)['os_name']== 'windows' else 'service'
 
         result = testinfra_host.ansible(ansible_command, f"name={service} state={state}", check=False, become=become)
 
@@ -398,14 +393,13 @@ class HostManager:
 
         return result
 
-    def run_command(self, host, cmd, become=False, windows=False, ignore_errors=False):
+    def run_command(self, host, cmd, become=False, ignore_errors=False):
         """Run a command on a host.
 
         Args:
             host (str): Hostname
             cmd (str): Command to run
             become (bool, optional): Use sudo. Defaults to False.
-            windows (bool, optional): Windows command. Defaults to False.
             ignore_errors (bool, optional): Ignore errors. Defaults to False.
 
         Returns:
@@ -415,7 +409,7 @@ class HostManager:
             Exception: If the command cannot be run
         """
         testinfra_host = self.get_host(host)
-        ansible_command = 'command' if not windows else 'win_command'
+        ansible_command = 'win_command' if self.get_host_variables(host)['os_name'] == 'windows' else 'command'
 
         result = testinfra_host.ansible(ansible_command, f"{cmd}", check=False, become=become)
         rc, stdout = result.get('rc', 1), result.get('stdout', '')
@@ -425,7 +419,7 @@ class HostManager:
 
         return rc, stdout
 
-    def run_shell(self, host, cmd, become=False, windows=False, ignore_errors=False):
+    def run_shell(self, host, cmd, become=False, ignore_errors=False):
         """Run a shell command on a host.
         The difference with run_command is that here, shell symbols like &, |, etc. are interpreted.
 
@@ -433,7 +427,6 @@ class HostManager:
             host (str): Hostname
             cmd (str): Command to run
             become (bool, optional): Use sudo. Defaults to False.
-            windows (bool, optional): Windows command. Defaults to False.
             ignore_errors (bool, optional): Ignore errors. Defaults to False.
 
         Returns:
@@ -446,7 +439,7 @@ class HostManager:
         rc = None
         stdout = None
 
-        ansible_command = 'shell' if not windows else 'win_shell'
+        ansible_command = 'win_shell' if self.get_host_variables(host)['os_name'] == 'windows' else 'shell'
 
         result = testinfra_host.ansible(ansible_command, f"{cmd}", check=False, become=become)
 
@@ -457,8 +450,7 @@ class HostManager:
 
         return rc, stdout
 
-    def find_files(self, host, path, pattern, recurse=False, use_regex=False, become=False, windows=False,
-                   ignore_errors=False):
+    def find_files(self, host, path, pattern, recurse=False, use_regex=False, become=False, ignore_errors=False):
         """Search and return information of a file inside a path.
 
         Args:
@@ -468,7 +460,6 @@ class HostManager:
             recurse (bool): If target is a directory, recursively descend into the directory looking for files.
             use_regex (bool): If no, the patterns are file globs (shell), if yes, they are python regexes.
             become (bool, optional): Use sudo. Defaults to False.
-            windows (bool, optional): Windows command. Defaults to False.
             ignore_errors (bool, optional): Ignore errors. Defaults to False.
 
         Returns:
@@ -478,8 +469,8 @@ class HostManager:
             Exception: If the command cannot be run
         """
         test_infra_host = self.get_host(host)
-        ansible_command = 'find' if not windows else 'win_find'
-        ansible_pattern_arguments = 'pattern' if not windows else 'patterns'
+        ansible_command = 'win_find' if self.get_host_variables(host)['os_name'] == 'windows' else 'find'
+        ansible_pattern_arguments = 'patterns' if self.get_host_variables(host)['os_name'] == 'windows' else 'pattern'
 
         result = test_infra_host.ansible(ansible_command, f"paths={path} {ansible_pattern_arguments}='{pattern}' \
                                          recurse={recurse} use_regex={use_regex}",
@@ -490,14 +481,13 @@ class HostManager:
 
         return result['files']
 
-    def get_file_stats(self, host, path, become=False, windows=False, ignore_errors=False):
+    def get_file_stats(self, host, path, become=False, ignore_errors=False):
         """Retrieve file or file system status.
 
         Args:
             host (str): Hostname.
             path (str): The full path of the file/object to get the facts of.
             become (bool, optional): Use sudo. Defaults to False.
-            windows (bool, optional): Windows command. Defaults to False.
             ignore_errors (bool, optional): Ignore errors. Defaults to False.
 
         Returns:
@@ -507,7 +497,8 @@ class HostManager:
             Exception: If the command cannot be run.
         """
         testinfra_host = self.get_host(host)
-        ansible_command = 'stat' if not windows else 'ansible.windows.win_stat'
+        
+        ansible_command = 'ansible.windows.win_stat' if self.get_host_variables(host)['os_name'] == 'windows' else 'stat'
 
         result = testinfra_host.ansible(ansible_command, f"path={path}", check=False, become=become)
 
