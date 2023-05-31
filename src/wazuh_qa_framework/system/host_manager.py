@@ -536,7 +536,8 @@ class HostManager:
         testinfra_host = self.get_host(host)
         ansible_command = 'package' if not windows else 'win_chocolatey'
 
-        result = testinfra_host.ansible(ansible_command, f"name={package_name} state={state}", check=False, become=become)
+        result = testinfra_host.ansible(ansible_command, f"name={package_name} state={state}",
+                                        check=False, become=become)
 
         if result.get('msg', None) and not ignore_errors:
             raise Exception(f"Error installing package {package_name} on host {host}: {result}")
@@ -565,6 +566,6 @@ class HostManager:
         result = testinfra_host.ansible(ansible_command, f"path={path} block={block}", check=False, become=become)
 
         if not result.get('msg', 'Block inserted') and not ignore_errors:
-           raise Exception(f"Error inserting a block in file {path} on host {host}: {result}")
+            raise Exception(f"Error inserting a block in file {path} on host {host}: {result}")
 
         return result
