@@ -382,7 +382,7 @@ class HostManager:
                 Exception: If the service cannot be controlled
         """
         testinfra_host = self.get_host(host)
-        ansible_command = 'win_service' if self.get_host_variables(host)['os_name']== 'windows' else 'service'
+        ansible_command = 'win_service' if self.get_host_variables(host)['os_name'] == 'windows' else 'service'
 
         result = testinfra_host.ansible(ansible_command, f"name={service} state={state}", check=False, become=become)
 
@@ -498,7 +498,7 @@ class HostManager:
 
         if self.get_host_variables(host)['os_name'] == 'windows':
             ansible_command = 'ansible.windows.win_stat'
-        else: 
+        else:
             ansible_command = 'stat'
 
         result = testinfra_host.ansible(ansible_command, f"path={path}", check=False, become=become)
@@ -507,4 +507,3 @@ class HostManager:
             raise Exception(f"Error getting stats of {path} on host {host}: {result}")
 
         return result
-    
