@@ -492,8 +492,6 @@ class WazuhEnvironmentHandler(HostManager):
         manager_list = self.get_managers()
         return 'agent' if host in agent_list else 'manager' if host in manager_list else None
 
-
-
     def get_agents_info(self):
         """Get registered agents information.
 
@@ -515,7 +513,6 @@ class WazuhEnvironmentHandler(HostManager):
 
         Args:
             host (str): Hostname
-            systemd (bool, optional): Restart using systemd. Defaults to False.
         """
         self.logger.debug(f'Restarting agent {host}')
 
@@ -531,6 +528,7 @@ class WazuhEnvironmentHandler(HostManager):
 
         Args:
             agent_list (list, optional): Agent list. Defaults to None.
+            parallel (bool, optional): Parallel execution. Defaults to True.
         """
         if parallel:
             agent_restart_tasks = None
@@ -544,7 +542,6 @@ class WazuhEnvironmentHandler(HostManager):
 
         Args:
             host (str): Hostname
-            systemd (bool, optional): Use systemd. Defaults to False.
         """
         self.logger.debug(f'Restarting manager {host}')
 
@@ -557,6 +554,7 @@ class WazuhEnvironmentHandler(HostManager):
 
         Args:
             manager_list (list): Managers list
+            parallel (bool, optional): Parallel execution. Defaults to True.
         """
         if parallel:
             manager_restart_tasks = []
@@ -570,7 +568,6 @@ class WazuhEnvironmentHandler(HostManager):
 
         Args:
             host (str): Hostname
-            systemd (bool, optional): Use systemd. Defaults to False.
         """
 
         self.logger.debug(f'Stopping agent {host}')
@@ -587,6 +584,7 @@ class WazuhEnvironmentHandler(HostManager):
 
         Args:
             agent_list(list, optional): Agents list. Defaults to None
+            parallel (bool, optional): Parallel execution. Defaults to True.
         """
         if parallel:
             self.pool.map(self.stop_agent, agent_list)
@@ -598,8 +596,7 @@ class WazuhEnvironmentHandler(HostManager):
         """Stop manager
 
         Args:
-            host (Hostname): Hostname
-            systemd (bool, optional): Use systemd. Defaults to False.
+            host (str): Hostname
         """
         self.logger.debug(f'Stopping manager {host}')
         self.control_service(host, 'wazuh-manager', 'stopped', become=True)
@@ -610,6 +607,7 @@ class WazuhEnvironmentHandler(HostManager):
 
         Args:
             manager_list (list): Managers list
+            parallel (bool, optional): Parallel execution. Defaults to True.
         """
         if parallel:
             self.pool.map(self.stop_manager, manager_list)
@@ -622,7 +620,6 @@ class WazuhEnvironmentHandler(HostManager):
 
         Args:
             host (str): Hostname
-            systemd (bool, optional): Use systemd. Defaults to False.
         """
         self.logger.debug(f'Starting agent {host}')
 
@@ -638,6 +635,7 @@ class WazuhEnvironmentHandler(HostManager):
 
         Args:
             agent_list (list): Agents list
+            parallel (bool, optional): Parallel execution. Defaults to True.
         """
         if parallel:
             self.pool.map(self.start_agent, agent_list)
@@ -662,6 +660,7 @@ class WazuhEnvironmentHandler(HostManager):
 
         Args:
             manager_list (list): Managers list
+            parallel (bool, optional): Parallel execution. Defaults to True.
         """
         if parallel:
             self.pool.map(self.start_manager, manager_list)
