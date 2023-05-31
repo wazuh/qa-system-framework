@@ -6,7 +6,6 @@ import tempfile
 import testinfra
 import base64
 import os
-import yaml
 from ansible.inventory.manager import InventoryManager
 from ansible.parsing.dataloader import DataLoader
 from ansible.vars.manager import VariableManager
