@@ -11,7 +11,6 @@ from wazuh_qa_framework.generic_modules.logging.framework_logger import Framewor
 from wazuh_qa_framework.system.host_manager import HostManager
 
 WAZUH_ANGENT_WINDOWS_SERVICE_NAME = 'WazuhSvc'
-
 DEFAULT_INSTALL_PATH = {
     'linux': '/var/ossec',
     'windows': 'C:\\Program Files\\ossec-agent',
