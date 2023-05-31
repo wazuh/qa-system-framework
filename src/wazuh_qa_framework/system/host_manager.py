@@ -515,3 +515,56 @@ class HostManager:
             raise Exception(f"Error getting stats of {path} on host {host}: {result}")
 
         return result
+
+    def manage_package(self, host, package_name, state, become=False, windows=False, ignore_errors=False):
+        """Install or uninstall a package on a host.
+
+        Args:
+            host (str): Hostname
+            package_name (str): Package to install or uninstall
+            become (bool, optional): Use sudo. Defaults to False.
+            windows (bool, optional): Windows command. Defaults to False.
+            state(str): Could be 'present' to install or 'absent' to uninstall
+            ignore_errors (bool, optional): Ignore errors. Defaults to False.
+
+        Returns:
+            dict: Command result
+
+        Raises:
+            Exception: If the install or uninstall cannot be run
+        """
+        testinfra_host = self.get_host(host)
+        ansible_command = 'package' if not windows else 'win_chocolatey'
+
+        result = testinfra_host.ansible(ansible_command, f"name={package_name} state={state}", check=False, become=become)
+
+        if result.get('msg', None) and not ignore_errors:
+            raise Exception(f"Error installing package {package_name} on host {host}: {result}")
+
+        return result
+
+    def insert_block_in_file(self, host, path, block, become=False, ignore_errors=False):
+        """Insert a text block in file (Linux)
+
+        Args:
+            host (str): Hostname
+            path (str): path for the file to insert a block
+            block (str, bytes): text block to write into the file
+            become (bool, optional): Use sudo. Defaults to False.
+            ignore_errors (bool, optional): Ignore errors. Defaults to False.
+
+        Returns:
+            dict: Command result
+
+        Raises:
+            Exception: If the file cannot be modified
+        """
+        testinfra_host = self.get_host(host)
+        ansible_command = 'blockinfile'
+
+        result = testinfra_host.ansible(ansible_command, f"path={path} block={block}", check=False, become=become)
+
+        if not result.get('msg', 'Block inserted') and not ignore_errors:
+           raise Exception(f"Error inserting a block in file {path} on host {host}: {result}")
+
+        return result
