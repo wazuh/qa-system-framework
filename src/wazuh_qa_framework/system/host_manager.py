@@ -544,8 +544,8 @@ class HostManager:
 
         return result
 
-    def insert_block_in_file(self, host, path, block, become=False, ignore_errors=False):
-        """Insert a text block in file (Linux)
+    def append_block_in_file(self, host, path, block, become=False, ignore_errors=False):
+        """Append a text block in file (Linux)
 
         Args:
             host (str): Hostname
