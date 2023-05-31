@@ -13,6 +13,7 @@ from ansible.vars.manager import VariableManager
 
 
 class HostManager:
+
     """Remote host management interface.
 
     It allows to manage remote hosts using ansible inventory and testinfra framework.
