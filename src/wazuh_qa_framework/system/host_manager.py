@@ -13,7 +13,6 @@ from ansible.vars.manager import VariableManager
 
 
 class HostManager:
-
     """Remote host management interface.
 
     It allows to manage remote hosts using ansible inventory and testinfra framework.
@@ -293,7 +292,6 @@ class HostManager:
         """
 
         testinfra_host = self.get_host(host)
-        
         ansible_command = 'win_file' if self.get_host_variables(host)['os_name'] == 'windows' else 'file'
         result = testinfra_host.ansible(ansible_command, f"path={file_path} state=absent", check=False, become=become)
 
@@ -498,8 +496,10 @@ class HostManager:
             Exception: If the command cannot be run.
         """
         testinfra_host = self.get_host(host)
-        
-        ansible_command = 'ansible.windows.win_stat' if self.get_host_variables(host)['os_name'] == 'windows' else 'stat'
+
+        if self.get_host_variables(host)['os_name'] == 'windows':
+            ansible_command = 'ansible.windows.win_stat' 
+        else: ansible_command = 'stat'
 
         result = testinfra_host.ansible(ansible_command, f"path={path}", check=False, become=become)
 
