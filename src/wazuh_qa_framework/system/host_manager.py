@@ -350,7 +350,7 @@ class HostManager:
         tmp_file = tempfile.NamedTemporaryFile()
         with open(tmp_file.name, 'w+') as tmp:
             tmp.write(content)
-        
+
         ansible_command = 'win_copy' if self.get_host_variables(host)['os_name'] == 'windows' else 'copy'
 
         ansible_parameters = f"src={tmp_file.name} dest={path}"
@@ -497,8 +497,9 @@ class HostManager:
         testinfra_host = self.get_host(host)
 
         if self.get_host_variables(host)['os_name'] == 'windows':
-            ansible_command = 'ansible.windows.win_stat' 
-        else: ansible_command = 'stat'
+            ansible_command = 'ansible.windows.win_stat'
+        else: 
+            ansible_command = 'stat'
 
         result = testinfra_host.ansible(ansible_command, f"path={path}", check=False, become=become)
 
@@ -506,3 +507,4 @@ class HostManager:
             raise Exception(f"Error getting stats of {path} on host {host}: {result}")
 
         return result
+    
