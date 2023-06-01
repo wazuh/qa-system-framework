@@ -518,7 +518,6 @@ class HostManager:
         return result
 
     def get_host_ansible_ip(self, host):
-
         """Get host used ip by ansible.
 
         Args:
@@ -528,6 +527,7 @@ class HostManager:
             str: Host used IP
         """
         ansible_ip = self.get_host_variables(host).get('ansible_host', None)
+
         return ansible_ip
 
     def is_windows(self, host):

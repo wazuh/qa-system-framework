@@ -1,6 +1,5 @@
 # Copyright (C) 2015-2022, Wazuh Inc.
 # Created by Wazuh, Inc. <info@wazuh.com>.
-
 # This program is free software; you can redistribute it and/or modify it under the terms of GPLv2
 
 import os
@@ -147,7 +146,7 @@ class WazuhEnvironmentHandler(HostManager):
         super().__init__(inventory_path)
         self.pool = ThreadPool(max_workers)
         level = 'debug' if debug else 'info'
-        self.logger = FrameworkLogger('WazuhEnvironment', level=level)
+        self.logger = BaseLogger('WazuhEnvironment', level=level)
 
     def get_file_fullpath(self, host, filename, group=None):
         """Get the path of common configuration and log file in the specified host.
@@ -544,9 +543,7 @@ class WazuhEnvironmentHandler(HostManager):
             host (str): Hostname
         """
         self.logger.debug(f'Restarting manager {host}')
-
         self.control_service(host, 'wazuh-manager', 'restarted', become=True)
-
         self.logger.debug(f'Manager {host} restarted successfully')
 
     def restart_managers(self, manager_list, parallel=True):
@@ -557,7 +554,6 @@ class WazuhEnvironmentHandler(HostManager):
             parallel (bool, optional): Parallel execution. Defaults to True.
         """
         if parallel:
-            manager_restart_tasks = []
             manager_restart_tasks = self.pool.map(self.restart_manager, manager_list)
         else:
             for manager in manager_list:
@@ -650,9 +646,7 @@ class WazuhEnvironmentHandler(HostManager):
             host (str): Hostname
         """
         self.logger.debug(f'Starting manager {host}')
-
         self.control_service(host, 'wazuh-manager', 'started', become=True)
-
         self.logger.debug(f'Manager {host} started successfully')
 
     def start_managers(self, manager_list, parallel=True):
