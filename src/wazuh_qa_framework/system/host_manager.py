@@ -521,7 +521,7 @@ class HostManager:
 
         Args:
             host (str): Hostname
-            package_name (str): Package to install or uninstall
+            package_name (str): Package to install
             become (bool, optional): Use sudo. Defaults to False.
             windows (bool, optional): Windows command. Defaults to False.
             ignore_errors (bool, optional): Ignore errors. Defaults to False.
@@ -549,7 +549,7 @@ class HostManager:
 
         Args:
             host (str): Hostname
-            package_name (str): Package to install or uninstall
+            package_name (str): Package to uninstall
             become (bool, optional): Use sudo. Defaults to False.
             windows (bool, optional): Windows command. Defaults to False.
             ignore_errors (bool, optional): Ignore errors. Defaults to False.
@@ -561,9 +561,10 @@ class HostManager:
             Exception: If the uninstall cannot be run
         """
         testinfra_host = self.get_host(host)
+        ansible_arguments = f"name={package_name} state=absent"
         ansible_command = 'package' if not windows else 'win_chocolatey'
 
-        result = testinfra_host.ansible(ansible_command, f"name={package_name} state=absent",
+        result = testinfra_host.ansible(ansible_command, ansible_arguments,
                                         check=False, become=become)
 
         if result.get('msg', None) and not ignore_errors:
@@ -594,9 +595,10 @@ class HostManager:
 
         else:
             testinfra_host = self.get_host(host)
+            ansible_arguments = f"path={path} block={block}"
             ansible_command = 'blockinfile'
 
-            result = testinfra_host.ansible(ansible_command, f"path={path} block={block}", check=False, become=become)
+            result = testinfra_host.ansible(ansible_command, ansible_arguments, check=False, become=become)
 
             if not result.get('msg', 'Block inserted') and not ignore_errors:
                 raise Exception(f"Error inserting a block in file {path} on host {host}: {result}")
