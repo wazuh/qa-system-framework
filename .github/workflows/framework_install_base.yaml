@@ -25,7 +25,7 @@ jobs:
         run: python -m venv .venv
 
       - name: Activate virtual environment
-        run: source .venv/bin/activate
+        run: .venv/bin/activate
 
       - name: Install QA framework
         run: pip install .
@@ -53,7 +53,7 @@ jobs:
         run: python -m venv .venv
 
       - name: Activate virtual environment
-        run: source .venv/bin/activate
+        run: source .\venv\Scripts\activate
 
       - name: Install QA framework
         run: pip install .
