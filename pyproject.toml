@@ -17,7 +17,6 @@ requires-python = ">=3.7"
 version = '1.0.0'
 
 dependencies = [
-    'setuptools>=42',
     'requests==2.28.2',
     'chardet==3.0.4',
     'psutil==5.8.0',
@@ -28,11 +27,9 @@ dependencies = [
     'pytest==7.3.1'
 ]
 
-
 [project.urls]
 "Homepage" = 'https://github.com/wazuh/wazuh-qa-framework'
 license = 'GPLv2'
-
 
 [tool.setuptools.packages.find]
 where = ['src']
