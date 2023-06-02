@@ -8,21 +8,62 @@
 
 # Wazuh QA framework
 
-This repository contains a toolset so that the tests and developers can build tests in a modular and efficient way.
+This repository contains a generic framework for the different QA processes.
 
 ## How to install
 
-> **Note**:
-> As precondition, you must have installed a python version >=3.7.1
+### Preconditions
 
+QA system framework require a python version >=3.7.1
 
-To install the wazuh-qa-framework package, execute the following pip command:
+### VirtualEnvironment
 
+It is highly recommended to use a virtual environment when installing the QA framework. Follow the steps below to create and activate a virtual environment:
+
+- Create a virtual environment named "qa-system-env" by running the following command
+```
+python -m venv qa-system-env
+```
+- Activate the virtual environment by executing the following command
+
+**Windows**
+```
+qa-system-env\Scripts\activate
+```
+
+**Linux/macOS**
+```
+source qa-system-env/bin/activate
+```
+
+By using a virtual environment, you can isolate the dependencies and ensure a clean installation of the QA framework without affecting your system's global Python environment.
+
+### Install
+
+To install the base Wazuh QA Framework package, you can use the following pip command:
 ```
 pip install .
 ```
+> **Note**:
+> The base framework is designed exclusively for in-host operations.
 
-This command will initiate the installation process and ensure that all necessary dependencies are resolved.
+If you need to install the dependencies to launch system tests with the node executor, you should specify it during the framework installation:
+```
+pip install .[system_executor_node]
+```
+> **Warning**:
+> Please note that only Linux systems can act as executor nodes.
+
+> **Note**:
+> Optional dependencies also include the base requirements.
+
+
+To install the dependencies for running unit tests, use the following command:
+```
+pip install .[unit_testing]
+```
+
+By executing this command, you will install the necessary dependencies for unit testing.
 
 ## How to use
 
