@@ -151,7 +151,7 @@ class HostManager:
         ansible_command = 'win_ping' if self.get_host_variables(host)['os_name'] == 'windows' else 'ping'
         return testinfra_host.ansible(ansible_command, check=False)['ping'] == 'pong'
 
-    def copy_file(self, host, src_path, dest_path, remote_src=False, become=False, ignore_errors=False):
+    def copy_file(self, host, src_path, dest_path, remote_src=False, become=None, ignore_errors=False):
         """Move from src_path to the desired location dest_path for the specified host.
 
         Args:
@@ -159,7 +159,8 @@ class HostManager:
             src_path (str): Source path
             dest_path (str): Destination path
             remote_src (bool): If True, the file is assumed to live on the remote machine, not the controller.
-            become (bool): Use sudo
+            become (bool): If no value is provided, it will take from the inventory. If there is no value, 
+                           it will default to False.
             ignore_errors (bool): Ignore errors
 
         Returns:
@@ -168,6 +169,12 @@ class HostManager:
         Raises:
             Exception: If the command execution fails
         """
+        if become is None:
+            become = self.get_host_variables(host)['become'].get('become', False)
+
+            if become in ['', None]:
+                become = False
+
         testinfra_host = self.get_host(host)
         ansible_command = 'win_copy' if self.get_host_variables(host)['os_name'] == 'windows' else 'copy'
         remote_source = 'yes' if remote_src else 'no'
@@ -180,13 +187,14 @@ class HostManager:
 
         return result
 
-    def get_file_content(self, host, path, become=False, ignore_errors=False):
+    def get_file_content(self, host, path, become=None, ignore_errors=False):
         """Read a file from the specified host.
 
         Args:
             host (str): Hostname
             path (str): File path
-            become (bool): Use sudo
+            become (bool): If no value is provided, it will take from the inventory. If there is no value, 
+                           it will default to False.
             ignore_errors (bool): Ignore errors
 
         Returns:
@@ -195,6 +203,12 @@ class HostManager:
         Raises:
             Exception: If the file cannot be read
         """
+        if become is None:
+            become = self.get_host_variables(host)['become'].get('become', False)
+
+            if become in ['', None]:
+                become = False
+
         testinfra_host = self.get_host(host)
         result = testinfra_host.ansible("slurp", f"src={path}", check=False, become=become)
 
@@ -203,7 +217,7 @@ class HostManager:
 
         return base64.b64decode(result['content']).decode('utf-8')
 
-    def synchronize_linux_directory(self, host, dest_path, src_path=None, filesystem=None, become=False,
+    def synchronize_linux_directory(self, host, dest_path, src_path=None, filesystem=None, become=None,
                                     ignore_errors=False):
         """Create a file structure on the specified host.
         Not supported on Windows.
@@ -212,7 +226,8 @@ class HostManager:
             host (str): Hostname
             dest_path (str): Destination path
             filesystem (dict): File structure
-            become (bool, optional): Use sudo. Defaults to False.
+            become (bool): If no value is provided, it will take from the inventory. If there is no value, 
+                           it will default to False.
             ignore_errors (bool, optional): Ignore errors. Defaults to False.
 
         Returns:
@@ -221,6 +236,12 @@ class HostManager:
         Raises:
             Exception: If the command execution fails
         """
+        if become is None:
+            become = self.get_host_variables(host)['become'].get('become', False)
+
+            if become in ['', None]:
+                become = False
+
         testinfra_host = self.get_host(host)
 
         ansible_command = 'synchronize'
@@ -243,14 +264,15 @@ class HostManager:
 
         return result
 
-    def truncate_file(self, host, file_path, recreate=True, become=False, ignore_errors=False):
+    def truncate_file(self, host, file_path, recreate=True, become=None, ignore_errors=False):
         """Truncate a file from the specified host.
 
         Args:
             host (str): Hostname
             file_path (str): File path
             recreate (bool, optional): Recreate file. Defaults to True.
-            become (bool, optional): Use sudo. Defaults to False.
+            become (bool): If no value is provided, it will take from the inventory. If there is no value, 
+                           it will default to False.
             ignore_errors (bool, optional): Ignore errors. Defaults to False.
 
         Returns:
@@ -259,6 +281,12 @@ class HostManager:
         Raises:
             Exception: If the file cannot be truncated
         """
+        if become is None:
+            become = self.get_host_variables(host)['become'].get('become', False)
+
+            if become in ['', None]:
+                become = False
+
         testinfra_host = self.get_host(host)
         result = None
 
@@ -274,13 +302,14 @@ class HostManager:
 
         return result
 
-    def remove_file(self, host, file_path, become=False, ignore_errors=False):
+    def remove_file(self, host, file_path, become=None, ignore_errors=False):
         """Remove a file from the specified host.
 
         Args:
             host (str): Hostname
             file_path (str): File path
-            become (bool, optional): Use sudo. Defaults to False.
+            become (bool): If no value is provided, it will take from the inventory. If there is no value, 
+                           it will default to False.
             ignore_errors (bool, optional): Ignore errors. Defaults to False.
 
         Returns:
@@ -289,6 +318,11 @@ class HostManager:
         Raises:
             Exception: If the file cannot be removed
         """
+        if become is None:
+            become = self.get_host_variables(host)['become'].get('become', False)
+
+            if become in ['', None]:
+                become = False
 
         testinfra_host = self.get_host(host)
         ansible_command = 'win_file' if self.get_host_variables(host)['os_name'] == 'windows' else 'file'
@@ -299,14 +333,15 @@ class HostManager:
 
         return result
 
-    def modify_file_content(self, host, path, content, become=False, ignore_errors=False):
+    def modify_file_content(self, host, path, content, become=None, ignore_errors=False):
         """Create a file with a specified content and copies it to a path.
 
         Args:
             host (str): Hostname
             path (str): path for the file to create and modify
             content (str, bytes): content to write into the file
-            become (bool, optional): Use sudo. Defaults to False.
+            become (bool): If no value is provided, it will take from the inventory. If there is no value, 
+                           it will default to False.
             ignore_errors (bool, optional): Ignore errors. Defaults to False.
 
         Returns:
@@ -315,6 +350,12 @@ class HostManager:
         Raises:
             Exception: If the file cannot be modified
         """
+        if become is None:
+            become = self.get_host_variables(host)['become'].get('become', False)
+
+            if become in ['', None]:
+                become = False
+
         tmp_file = tempfile.NamedTemporaryFile()
         with open(tmp_file.name, 'w+') as tmp:
             tmp.write(content)
@@ -326,7 +367,7 @@ class HostManager:
 
         return result
 
-    def create_file(self, host, path, content, directory=False, owner=None, group=None, mode=None, become=False,
+    def create_file(self, host, path, content, directory=False, owner=None, group=None, mode=None, become=None,
                     ignore_errors=False):
         """Create a file with a specified content and copies it to a path.
 
@@ -337,7 +378,8 @@ class HostManager:
             owner (str): owner of the file
             group (str): group of the file
             mode (str): mode of the file
-            become (bool, optional): Use sudo. Defaults to False.
+            become (bool): If no value is provided, it will take from the inventory. If there is no value, 
+                           it will default to False.
             ignore_errors (bool, optional): Ignore errors. Defaults to False.
 
         Returns:
@@ -346,6 +388,12 @@ class HostManager:
         Raises:
             Exception: If the file cannot be created
         """
+        if become is None:
+            become = self.get_host_variables(host)['become'].get('become', False)
+
+            if become in ['', None]:
+                become = False
+
         testinfra_host = self.get_host(host)
         tmp_file = tempfile.NamedTemporaryFile()
         with open(tmp_file.name, 'w+') as tmp:
@@ -365,14 +413,15 @@ class HostManager:
             raise Exception(f"Error creating file {path} on host {host}: {result}")
         return result
 
-    def control_service(self, host, service, state, become=False, ignore_errors=False):
+    def control_service(self, host, service, state, become=None, ignore_errors=False):
         """Control a service on a host.
 
             Args:
                 host (str): Hostname
                 service (str): Service name
                 state (str): Service state
-                become (bool, optional): Use sudo. Defaults to False.
+            become (bool): If no value is provided, it will take from the inventory. If there is no value, 
+                           it will default to False.
                 ignore_errors (bool, optional): Ignore errors. Defaults to False.
 
             Returns:
@@ -381,6 +430,12 @@ class HostManager:
             Raises:
                 Exception: If the service cannot be controlled
         """
+        if become is None:
+            become = self.get_host_variables(host)['become'].get('become', False)
+
+            if become in ['', None]:
+                become = False
+
         testinfra_host = self.get_host(host)
         ansible_command = 'win_service' if self.get_host_variables(host)['os_name'] == 'windows' else 'service'
 
@@ -391,13 +446,14 @@ class HostManager:
 
         return result
 
-    def run_command(self, host, cmd, become=False, ignore_errors=False):
+    def run_command(self, host, cmd, become=None, ignore_errors=False):
         """Run a command on a host.
 
         Args:
             host (str): Hostname
             cmd (str): Command to run
-            become (bool, optional): Use sudo. Defaults to False.
+            become (bool): If no value is provided, it will take from the inventory. If there is no value, 
+                           it will default to False.
             ignore_errors (bool, optional): Ignore errors. Defaults to False.
 
         Returns:
@@ -406,6 +462,12 @@ class HostManager:
         Raises:
             Exception: If the command cannot be run
         """
+        if become is None:
+            become = self.get_host_variables(host)['become'].get('become', False)
+
+            if become in ['', None]:
+                become = False
+
         testinfra_host = self.get_host(host)
         ansible_command = 'win_command' if self.get_host_variables(host)['os_name'] == 'windows' else 'command'
 
@@ -417,14 +479,15 @@ class HostManager:
 
         return rc, stdout
 
-    def run_shell(self, host, cmd, become=False, ignore_errors=False):
+    def run_shell(self, host, cmd, become=None, ignore_errors=False):
         """Run a shell command on a host.
         The difference with run_command is that here, shell symbols like &, |, etc. are interpreted.
 
         Args:
             host (str): Hostname
             cmd (str): Command to run
-            become (bool, optional): Use sudo. Defaults to False.
+            become (bool): If no value is provided, it will take from the inventory. If there is no value, 
+                           it will default to False.
             ignore_errors (bool, optional): Ignore errors. Defaults to False.
 
         Returns:
@@ -433,6 +496,12 @@ class HostManager:
         Raises:
             Exception: If the command cannot be run
         """
+        if become is None:
+            become = self.get_host_variables(host)['become'].get('become', False)
+
+            if become in ['', None]:
+                become = False
+
         testinfra_host = self.get_host(host)
         rc = None
         stdout = None
@@ -448,7 +517,7 @@ class HostManager:
 
         return rc, stdout
 
-    def find_files(self, host, path, pattern, recurse=False, use_regex=False, become=False, ignore_errors=False):
+    def find_files(self, host, path, pattern, recurse=False, use_regex=False, become=None, ignore_errors=False):
         """Search and return information of a file inside a path.
 
         Args:
@@ -457,7 +526,8 @@ class HostManager:
             pattern (str): Restrict the files to be returned to those whose basenames match the pattern specified.
             recurse (bool): If target is a directory, recursively descend into the directory looking for files.
             use_regex (bool): If no, the patterns are file globs (shell), if yes, they are python regexes.
-            become (bool, optional): Use sudo. Defaults to False.
+            become (bool): If no value is provided, it will take from the inventory. If there is no value, 
+                           it will default to False.
             ignore_errors (bool, optional): Ignore errors. Defaults to False.
 
         Returns:
@@ -466,6 +536,12 @@ class HostManager:
         Raises:
             Exception: If the command cannot be run
         """
+        if become is None:
+            become = self.get_host_variables(host)['become'].get('become', False)
+
+            if become in ['', None]:
+                become = False
+
         test_infra_host = self.get_host(host)
         ansible_command = 'win_find' if self.get_host_variables(host)['os_name'] == 'windows' else 'find'
         ansible_pattern_arguments = 'patterns' if self.get_host_variables(host)['os_name'] == 'windows' else 'pattern'
@@ -479,13 +555,14 @@ class HostManager:
 
         return result['files']
 
-    def get_file_stats(self, host, path, become=False, ignore_errors=False):
+    def get_file_stats(self, host, path, become=None, ignore_errors=False):
         """Retrieve file or file system status.
 
         Args:
             host (str): Hostname.
             path (str): The full path of the file/object to get the facts of.
-            become (bool, optional): Use sudo. Defaults to False.
+            become (bool): If no value is provided, it will take from the inventory. If there is no value, 
+                           it will default to False.
             ignore_errors (bool, optional): Ignore errors. Defaults to False.
 
         Returns:
@@ -494,6 +571,12 @@ class HostManager:
         Raises:
             Exception: If the command cannot be run.
         """
+        if become is None:
+            become = self.get_host_variables(host)['become'].get('become', False)
+
+            if become in ['', None]:
+                become = False
+
         testinfra_host = self.get_host(host)
 
         if self.get_host_variables(host)['os_name'] == 'windows':
@@ -507,3 +590,4 @@ class HostManager:
             raise Exception(f"Error getting stats of {path} on host {host}: {result}")
 
         return result
+
