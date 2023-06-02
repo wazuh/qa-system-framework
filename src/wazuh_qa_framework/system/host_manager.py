@@ -170,10 +170,11 @@ class HostManager:
             Exception: If the command execution fails
         """
         if become is None:
-            become = self.get_host_variables(host)['become'].get('become', False)
+            if 'become' in self.get_host_variables(host):
+                become = self.get_host_variables(host)['become'].get('become', False)
 
-            if become in ['', None]:
-                become = False
+                if become in ['', None]:
+                    become = False
 
         testinfra_host = self.get_host(host)
         ansible_command = 'win_copy' if self.get_host_variables(host)['os_name'] == 'windows' else 'copy'
@@ -204,10 +205,11 @@ class HostManager:
             Exception: If the file cannot be read
         """
         if become is None:
-            become = self.get_host_variables(host)['become'].get('become', False)
+            if 'become' in self.get_host_variables(host):
+                become = self.get_host_variables(host)['become'].get('become', False)
 
-            if become in ['', None]:
-                become = False
+                if become in ['', None]:
+                    become = False
 
         testinfra_host = self.get_host(host)
         result = testinfra_host.ansible("slurp", f"src={path}", check=False, become=become)
@@ -237,10 +239,11 @@ class HostManager:
             Exception: If the command execution fails
         """
         if become is None:
-            become = self.get_host_variables(host)['become'].get('become', False)
+            if 'become' in self.get_host_variables(host):
+                become = self.get_host_variables(host)['become'].get('become', False)
 
-            if become in ['', None]:
-                become = False
+                if become in ['', None]:
+                    become = False
 
         testinfra_host = self.get_host(host)
 
@@ -282,10 +285,11 @@ class HostManager:
             Exception: If the file cannot be truncated
         """
         if become is None:
-            become = self.get_host_variables(host)['become'].get('become', False)
+            if 'become' in self.get_host_variables(host):
+                become = self.get_host_variables(host)['become'].get('become', False)
 
-            if become in ['', None]:
-                become = False
+                if become in ['', None]:
+                    become = False
 
         testinfra_host = self.get_host(host)
         result = None
@@ -319,10 +323,11 @@ class HostManager:
             Exception: If the file cannot be removed
         """
         if become is None:
-            become = self.get_host_variables(host)['become'].get('become', False)
+            if 'become' in self.get_host_variables(host):
+                become = self.get_host_variables(host)['become'].get('become', False)
 
-            if become in ['', None]:
-                become = False
+                if become in ['', None]:
+                    become = False
 
         testinfra_host = self.get_host(host)
         ansible_command = 'win_file' if self.get_host_variables(host)['os_name'] == 'windows' else 'file'
@@ -351,10 +356,11 @@ class HostManager:
             Exception: If the file cannot be modified
         """
         if become is None:
-            become = self.get_host_variables(host)['become'].get('become', False)
+            if 'become' in self.get_host_variables(host):
+                become = self.get_host_variables(host)['become'].get('become', False)
 
-            if become in ['', None]:
-                become = False
+                if become in ['', None]:
+                    become = False
 
         tmp_file = tempfile.NamedTemporaryFile()
         with open(tmp_file.name, 'w+') as tmp:
@@ -389,10 +395,11 @@ class HostManager:
             Exception: If the file cannot be created
         """
         if become is None:
-            become = self.get_host_variables(host)['become'].get('become', False)
+            if 'become' in self.get_host_variables(host):
+                become = self.get_host_variables(host)['become'].get('become', False)
 
-            if become in ['', None]:
-                become = False
+                if become in ['', None]:
+                    become = False
 
         testinfra_host = self.get_host(host)
         tmp_file = tempfile.NamedTemporaryFile()
@@ -431,10 +438,11 @@ class HostManager:
                 Exception: If the service cannot be controlled
         """
         if become is None:
-            become = self.get_host_variables(host)['become'].get('become', False)
+            if 'become' in self.get_host_variables(host):
+                become = self.get_host_variables(host)['become'].get('become', False)
 
-            if become in ['', None]:
-                become = False
+                if become in ['', None]:
+                    become = False
 
         testinfra_host = self.get_host(host)
         ansible_command = 'win_service' if self.get_host_variables(host)['os_name'] == 'windows' else 'service'
@@ -463,10 +471,11 @@ class HostManager:
             Exception: If the command cannot be run
         """
         if become is None:
-            become = self.get_host_variables(host)['become'].get('become', False)
+            if 'become' in self.get_host_variables(host):
+                become = self.get_host_variables(host)['become'].get('become', False)
 
-            if become in ['', None]:
-                become = False
+                if become in ['', None]:
+                    become = False
 
         testinfra_host = self.get_host(host)
         ansible_command = 'win_command' if self.get_host_variables(host)['os_name'] == 'windows' else 'command'
@@ -497,10 +506,11 @@ class HostManager:
             Exception: If the command cannot be run
         """
         if become is None:
-            become = self.get_host_variables(host)['become'].get('become', False)
+            if 'become' in self.get_host_variables(host):
+                become = self.get_host_variables(host)['become'].get('become', False)
 
-            if become in ['', None]:
-                become = False
+                if become in ['', None]:
+                    become = False
 
         testinfra_host = self.get_host(host)
         rc = None
@@ -537,10 +547,11 @@ class HostManager:
             Exception: If the command cannot be run
         """
         if become is None:
-            become = self.get_host_variables(host)['become'].get('become', False)
+            if 'become' in self.get_host_variables(host):
+                become = self.get_host_variables(host)['become'].get('become', False)
 
-            if become in ['', None]:
-                become = False
+                if become in ['', None]:
+                    become = False
 
         test_infra_host = self.get_host(host)
         ansible_command = 'win_find' if self.get_host_variables(host)['os_name'] == 'windows' else 'find'
@@ -572,10 +583,11 @@ class HostManager:
             Exception: If the command cannot be run.
         """
         if become is None:
-            become = self.get_host_variables(host)['become'].get('become', False)
+            if 'become' in self.get_host_variables(host):
+                become = self.get_host_variables(host)['become'].get('become', False)
 
-            if become in ['', None]:
-                become = False
+                if become in ['', None]:
+                    become = False
 
         testinfra_host = self.get_host(host)
 
