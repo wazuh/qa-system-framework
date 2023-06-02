@@ -160,7 +160,7 @@ class HostManager:
             dest_path (str): Destination path
             remote_src (bool): If True, the file is assumed to live on the remote machine, not the controller.
             become (bool): If no value is provided, it will take from the inventory. If there is no value, 
-                           it will default to False.
+            it will default to False.
             ignore_errors (bool): Ignore errors
 
         Returns:
@@ -194,7 +194,7 @@ class HostManager:
             host (str): Hostname
             path (str): File path
             become (bool): If no value is provided, it will take from the inventory. If there is no value, 
-                           it will default to False.
+            it will default to False.
             ignore_errors (bool): Ignore errors
 
         Returns:
@@ -227,7 +227,7 @@ class HostManager:
             dest_path (str): Destination path
             filesystem (dict): File structure
             become (bool): If no value is provided, it will take from the inventory. If there is no value, 
-                           it will default to False.
+            it will default to False.
             ignore_errors (bool, optional): Ignore errors. Defaults to False.
 
         Returns:
@@ -272,7 +272,7 @@ class HostManager:
             file_path (str): File path
             recreate (bool, optional): Recreate file. Defaults to True.
             become (bool): If no value is provided, it will take from the inventory. If there is no value, 
-                           it will default to False.
+            it will default to False.
             ignore_errors (bool, optional): Ignore errors. Defaults to False.
 
         Returns:
@@ -309,7 +309,7 @@ class HostManager:
             host (str): Hostname
             file_path (str): File path
             become (bool): If no value is provided, it will take from the inventory. If there is no value, 
-                           it will default to False.
+            it will default to False.
             ignore_errors (bool, optional): Ignore errors. Defaults to False.
 
         Returns:
@@ -341,7 +341,7 @@ class HostManager:
             path (str): path for the file to create and modify
             content (str, bytes): content to write into the file
             become (bool): If no value is provided, it will take from the inventory. If there is no value, 
-                           it will default to False.
+            it will default to False.
             ignore_errors (bool, optional): Ignore errors. Defaults to False.
 
         Returns:
@@ -379,7 +379,7 @@ class HostManager:
             group (str): group of the file
             mode (str): mode of the file
             become (bool): If no value is provided, it will take from the inventory. If there is no value, 
-                           it will default to False.
+            it will default to False.
             ignore_errors (bool, optional): Ignore errors. Defaults to False.
 
         Returns:
@@ -421,7 +421,7 @@ class HostManager:
                 service (str): Service name
                 state (str): Service state
             become (bool): If no value is provided, it will take from the inventory. If there is no value, 
-                           it will default to False.
+            it will default to False.
                 ignore_errors (bool, optional): Ignore errors. Defaults to False.
 
             Returns:
@@ -453,7 +453,7 @@ class HostManager:
             host (str): Hostname
             cmd (str): Command to run
             become (bool): If no value is provided, it will take from the inventory. If there is no value, 
-                           it will default to False.
+            it will default to False.
             ignore_errors (bool, optional): Ignore errors. Defaults to False.
 
         Returns:
@@ -487,7 +487,7 @@ class HostManager:
             host (str): Hostname
             cmd (str): Command to run
             become (bool): If no value is provided, it will take from the inventory. If there is no value, 
-                           it will default to False.
+            it will default to False.
             ignore_errors (bool, optional): Ignore errors. Defaults to False.
 
         Returns:
@@ -527,7 +527,7 @@ class HostManager:
             recurse (bool): If target is a directory, recursively descend into the directory looking for files.
             use_regex (bool): If no, the patterns are file globs (shell), if yes, they are python regexes.
             become (bool): If no value is provided, it will take from the inventory. If there is no value, 
-                           it will default to False.
+            it will default to False.
             ignore_errors (bool, optional): Ignore errors. Defaults to False.
 
         Returns:
@@ -562,7 +562,7 @@ class HostManager:
             host (str): Hostname.
             path (str): The full path of the file/object to get the facts of.
             become (bool): If no value is provided, it will take from the inventory. If there is no value, 
-                           it will default to False.
+            it will default to False.
             ignore_errors (bool, optional): Ignore errors. Defaults to False.
 
         Returns:
@@ -590,4 +590,3 @@ class HostManager:
             raise Exception(f"Error getting stats of {path} on host {host}: {result}")
 
         return result
-
