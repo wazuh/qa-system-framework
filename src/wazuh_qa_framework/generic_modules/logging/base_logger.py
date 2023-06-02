@@ -48,7 +48,8 @@ LOG_COLORS = {
 }
 
 FORMATERS = {
-    'basic': logging.Formatter('%(asctime)s — %(levelname)s — %(message)s')
+    'basic': logging.Formatter('%(asctime)s — %(levelname)s — %(message)s'),
+    'verbose': logging.Formatter('{asctime} - {name} - {levelname} - {message} ({function}:{lineno})')
 }
 
 

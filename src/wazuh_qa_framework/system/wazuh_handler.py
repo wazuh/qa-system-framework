@@ -145,8 +145,11 @@ class WazuhEnvironmentHandler(HostManager):
     def __init__(self, inventory_path, debug=False, max_workers=10):
         super().__init__(inventory_path)
         self.pool = ThreadPool(max_workers)
-        level = 'debug' if debug else 'info'
-        self.logger = BaseLogger('WazuhEnvironment', level=level)
+
+        # Define logger
+        logger_level = 'debug' if debug else 'info'
+        logger_formatter = 'verbose' if debug else 'basic'
+        self.logger = BaseLogger('WazuhEnvironment', level=level, formatter=formatter)
 
     def get_file_fullpath(self, host, filename, group=None):
         """Get the path of common configuration and log file in the specified host.
@@ -513,14 +516,17 @@ class WazuhEnvironmentHandler(HostManager):
         Args:
             host (str): Hostname
         """
-        self.logger.debug(f'Restarting agent {host}')
+        if self.is_agent(host):
+            self.logger.debug(f'Restarting agent {host}')
 
-        if self.is_windows(host):
-            self.control_service(host, WAZUH_ANGENT_WINDOWS_SERVICE_NAME, 'restarted', windows=True)
-        elif self.is_linux(host):
-            self.control_service(host, 'wazuh-agent', 'restarted', become=True)
+            if self.is_windows(host):
+                self.control_service(host, WAZUH_ANGENT_WINDOWS_SERVICE_NAME, 'restarted', windows=True)
+            elif self.is_linux(host):
+                self.control_service(host, 'wazuh-agent', 'restarted', become=True)
 
-        self.logger.debug(f'Agent {host} restarted successfully')
+            self.logger.debug(f'Agent {host} restarted successfully')
+        else:
+            ValueError(f'Host {host} is not an agent')
 
     def restart_agents(self, agent_list=None, parallel=True):
         """Restart list of agents
@@ -542,9 +548,12 @@ class WazuhEnvironmentHandler(HostManager):
         Args:
             host (str): Hostname
         """
-        self.logger.debug(f'Restarting manager {host}')
-        self.control_service(host, 'wazuh-manager', 'restarted', become=True)
-        self.logger.debug(f'Manager {host} restarted successfully')
+        if self.is_manager(host):
+            self.logger.debug(f'Restarting manager {host}')
+            self.control_service(host, 'wazuh-manager', 'restarted', become=True)
+            self.logger.debug(f'Manager {host} restarted successfully')
+        else:
+            ValueError(f'Host {host} is not a manager')
 
     def restart_managers(self, manager_list, parallel=True):
         """Restart managers
@@ -566,14 +575,17 @@ class WazuhEnvironmentHandler(HostManager):
             host (str): Hostname
         """
 
-        self.logger.debug(f'Stopping agent {host}')
+        if self.is_agent(host):
+            self.logger.debug(f'Stopping agent {host}')
 
-        if self.is_windows(host):
-            self.control_service(host, WAZUH_ANGENT_WINDOWS_SERVICE_NAME, 'restarted', windows=True)
-        elif self.is_linux(host):
-            self.control_service(host, 'wazuh-agent', 'stopped', become=True)
+            if self.is_windows(host):
+                self.control_service(host, WAZUH_ANGENT_WINDOWS_SERVICE_NAME, 'restarted', windows=True)
+            elif self.is_linux(host):
+                self.control_service(host, 'wazuh-agent', 'stopped', become=True)
 
-        self.logger.debug(f'Agent {host} stopped successfully')
+            self.logger.debug(f'Agent {host} stopped successfully')
+        else:
+            ValueError(f'Host {host} is not an agent')
 
     def stop_agents(self, agent_list=None, parallel=True):
         """Stop agents
@@ -594,9 +606,12 @@ class WazuhEnvironmentHandler(HostManager):
         Args:
             host (str): Hostname
         """
-        self.logger.debug(f'Stopping manager {host}')
-        self.control_service(host, 'wazuh-manager', 'stopped', become=True)
-        self.logger.debug(f'Manager {host} stopped successfully')
+        if self.is_manager(host):
+            self.logger.debug(f'Stopping manager {host}')
+            self.control_service(host, 'wazuh-manager', 'stopped', become=True)
+            self.logger.debug(f'Manager {host} stopped successfully')
+        else:
+            ValueError(f'Host {host} is not a manager')
 
     def stop_managers(self, manager_list, parallel=True):
         """Stop managers
@@ -619,12 +634,15 @@ class WazuhEnvironmentHandler(HostManager):
         """
         self.logger.debug(f'Starting agent {host}')
 
-        if self.is_windows(host):
-            self.control_service(host, WAZUH_ANGENT_WINDOWS_SERVICE_NAME, 'started', windows=True)
-        elif self.is_linux(host):
-            self.control_service(host, 'wazuh-agent', 'started', become=True)
+        if self.is_agent(host):
+            if self.is_windows(host):
+                self.control_service(host, WAZUH_ANGENT_WINDOWS_SERVICE_NAME, 'started', windows=True)
+            elif self.is_linux(host):
+                self.control_service(host, 'wazuh-agent', 'started', become=True)
 
-        self.logger.debug(f'Agent {host} started successfully')
+            self.logger.debug(f'Agent {host} started successfully')
+        else:
+            ValueError(f'Host {host} is not an agent')
 
     def start_agents(self, agent_list, parallel=True):
         """Start agents
@@ -645,9 +663,12 @@ class WazuhEnvironmentHandler(HostManager):
         Args:
             host (str): Hostname
         """
-        self.logger.debug(f'Starting manager {host}')
-        self.control_service(host, 'wazuh-manager', 'started', become=True)
-        self.logger.debug(f'Manager {host} started successfully')
+        if self.is_manager(host):
+            self.logger.debug(f'Starting manager {host}')
+            self.control_service(host, 'wazuh-manager', 'started', become=True)
+            self.logger.debug(f'Manager {host} started successfully')
+        else:
+            ValueError(f'Host {host} is not a manager')
 
     def start_managers(self, manager_list, parallel=True):
         """Start managers
@@ -785,3 +806,23 @@ class WazuhEnvironmentHandler(HostManager):
             List: Agent names list
         """
         return self.get_group_hosts('agent')
+
+    def is_agent(self, host):
+        """Check if host is agent
+
+        Args:
+            host (str): Hostname
+        Returns:
+            bool: True if host is agent
+        """
+        return host in self.get_agents()
+
+    def is_manager(self, host):
+        """Check if host is manager
+
+        Args:
+            host (str): Hostname
+        Returns:
+            bool: True if host is manager
+        """
+        return host in self.get_managers()
