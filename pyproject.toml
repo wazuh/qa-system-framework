@@ -20,15 +20,18 @@ dependencies = [
     'requests==2.28.2',
     'chardet==3.0.4',
     'psutil==5.8.0',
-    'pyyaml==5.4',
     'pytz==2021.1',
-    'pytest==7.3.1'
 ]
 
 [project.optional-dependencies]
 system_executor_node = [
     'ansible>=4.10.0',
     'pytest-testinfra>=6.7.0',
+    'pytest==7.3.1'
+]
+unit_testing = [
+    'pytest >= 6.2.5',
+    'pyaml >= 21.8.3',
 ]
 
 [project.urls]

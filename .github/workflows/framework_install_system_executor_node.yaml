@@ -27,8 +27,8 @@ jobs:
       - name: Activate virtual environment
         run: source .venv/bin/activate
 
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
       - name: Install QA framework
         run: pip install .[system_executor_node]
-
-      - name: Run unit tests
-        run: python -m pytest tests/ --tb=short
