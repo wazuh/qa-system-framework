@@ -36,3 +36,4 @@ license = 'GPLv2'
 
 [tool.setuptools.packages.find]
 where = ['src']
+exclude = ['tests*']
