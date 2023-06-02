@@ -1,17 +1,22 @@
 name: framework_install
 on:
-  - pull_request
+  pull_request:
+    paths:
+      - pyproject.toml
 
 jobs:
-
   linux:
     runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        python-version:
+          - 3.10.9
+          - 3.7.1
     steps:
-
-      - name: Set up Python 3.10
+      - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: "3.10"
+          python-version: ${{ matrix.python-version }}
 
       - name: Download files
         uses: actions/checkout@v3
@@ -24,12 +29,16 @@ jobs:
 
   windows:
     runs-on: windows-2019
+    strategy:
+      matrix:
+        python-version:
+          - 3.10.9
+          - 3.7.1
     steps:
-
-      - name: Set up Python 3.10
+      - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: "3.10"
+          python-version: ${{ matrix.python-version }}
 
       - name: Download files
         uses: actions/checkout@v3
