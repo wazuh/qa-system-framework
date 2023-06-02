@@ -12,19 +12,17 @@ This repository contains a toolset so that the tests and developers can build te
 
 ## How to install
 
->Note: As precondition, you must have installed a python version >=3.8.0
+> **Note**:
+> As precondition, you must have installed a python version >=3.7.1
 
-First, you have to install the python dependencies. These dependencies are needed to use and import the repository framework tools. You can install them using the `requirements.txt` file that is located in the root path of this repository:
 
-```
-python3 -m pip install -r requirements.txt
-```
-
-Next, you have to install the `wazuh-qa-framework` in order to use it as python dependency. To do this, you have to install the `setup.py` file that is located in the root path of this repository.
+To install the wazuh-qa-framework package, execute the following pip command:
 
 ```
-python3 setup.py install
+pip install .
 ```
+
+This command will initiate the installation process and ensure that all necessary dependencies are resolved.
 
 ## How to use
 
@@ -33,4 +31,3 @@ Once you have installed the `wazuh-qa-framework`, you can use and import it into
 ```
 from wazuh_qa_framework.x import y
 ```
-
