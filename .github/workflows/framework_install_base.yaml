@@ -1,4 +1,4 @@
-name: framework_install
+name: framework_install_base
 on:
   pull_request:
     paths:
@@ -21,6 +21,12 @@ jobs:
       - name: Download files
         uses: actions/checkout@v3
 
+      - name: Create virtual environment
+        run: python -m venv .venv
+
+      - name: Activate virtual environment
+        run: source .venv/bin/activate
+
       - name: Install QA framework
         run: pip install .
 
@@ -42,6 +48,12 @@ jobs:
 
       - name: Download files
         uses: actions/checkout@v3
+
+      - name: Create virtual environment
+        run: python -m venv .venv
+
+      - name: Activate virtual environment
+        run: source .venv/bin/activate
 
       - name: Install QA framework
         run: pip install .

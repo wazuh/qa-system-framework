@@ -22,6 +22,10 @@ dependencies = [
     'psutil==5.8.0',
     'pyyaml==5.4',
     'pytz==2021.1',
+]
+
+[project.optional-dependencies]
+system_executor_node = [
     'ansible>=4.10.0',
     'pytest-testinfra>=6.7.0',
     'pytest==7.3.1'
