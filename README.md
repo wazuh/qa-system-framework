@@ -40,23 +40,32 @@ By using a virtual environment, you can isolate the dependencies and ensure a cl
 
 ### Install
 
-To install the base Wazuh QA Framework package, you can use the following pip command:
+**Base Framework**
+
+The base framework installation is intended for use in system test endpoints, offering various functionalities for different types of testing.
+
+To install only the base Wazuh QA Framework package, you can use the following pip command:
 ```
 pip install .
 ```
 > **Note**:
 > The base framework is designed exclusively for in-host operations.
 
-If you need to install the dependencies to launch system tests with the node executor, you should specify it during the framework installation:
+**Test system launcher**
+
+The test system launcher is the host responsible for initiating remote operations on the endpoint. This node requires specific dependencies, which can be installed using the following command:
 ```
-pip install .[system_executor_node]
+pip install .[system_tests_launcher]
 ```
+
 > **Warning**:
 > Please note that only Linux systems can act as executor nodes.
 
 > **Note**:
 > Optional dependencies also include the base requirements.
 
+
+**Unit Testing**
 
 To install the dependencies for running unit tests, use the following command:
 ```
