@@ -6,6 +6,8 @@ import tempfile
 import testinfra
 import base64
 import os
+import ansible_runner
+import yaml
 from ansible.inventory.manager import InventoryManager
 from ansible.parsing.dataloader import DataLoader
 from ansible.vars.manager import VariableManager
@@ -515,3 +517,29 @@ class HostManager:
             raise Exception(f"Error getting stats of {path} on host {host}: {result}")
 
         return result
+
+    def run_playbook(self, playbook_path:str, extra_vars):
+        """Run playbook on a host.
+
+        Args:
+            playbook_path (str): Playbook path to run.
+            path (str): The full path of the file/object to get the facts of.
+            become (bool, optional): Use sudo. Defaults to False.
+            windows (bool, optional): Windows command. Defaults to False.
+            ignore_errors (bool, optional): Ignore errors. Defaults to False.
+
+        Returns:
+            dict: Command result.
+
+        Raises:
+            Exception: If the command cannot be run.
+        """
+        print(self.inventory_path)
+        inventory_dict = yaml.safe_load(open(self.inventory_path))
+        runner = ansible_runner.run(
+            playbook=playbook_path,
+            inventory=inventory_dict,
+            extravars=extra_vars,
+        )
+        print(runner)
+        return runner.rc == 0
