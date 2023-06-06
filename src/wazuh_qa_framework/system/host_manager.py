@@ -524,26 +524,29 @@ class HostManager:
         Args:
             playbook_path (str): Playbook path to run.
             path (str): The full path of the file/object to get the facts of.
-            become (bool, optional): Use sudo. Defaults to False.
-            windows (bool, optional): Windows command. Defaults to False.
-            ignore_errors (bool, optional): Ignore errors. Defaults to False.
+            extra_vars (dict): Extra variables to be passed to Ansible at runtime
 
         Returns:
-            dict: runner result.
+            bool: Runner result.
 
         Raises:
             Exception: If the playbook fails.
         """
         inventory_dict = yaml.safe_load(open(self.inventory_path))
-        runner = ansible_runner.run(
-            playbook=playbook_path,
-            inventory=inventory_dict,
-            extravars=extra_vars,
-        )
 
-        if runner.status == 'failed':
-            raise Exception(f"The playbook has failed")
+        try:
+            runner = ansible_runner.run(
+                playbook=playbook_path,
+                inventory=inventory_dict,
+                extravars=extra_vars,
+            )
+            if runner.status == 'failed':
+                raise Exception(f"Run playbook has status failed")
 
-        if runner.status == 'timeout':
-            raise Exception(f"The playbook execution has failed due to a tiemout")
+            if runner.status == 'timeout':
+                raise Exception(f"The playbook execution has failed due to a tiemout")
+
+        except Exception as e:
+            raise Exception(f"Run playbook fails due to an unexpected error: {e}")
+
         return runner.rc == 0
