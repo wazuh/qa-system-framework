@@ -175,7 +175,7 @@ class HostManager:
         ansible_command = 'win_copy' if self.get_host_variables(host)['os_name'] == 'windows' else 'copy'
         remote_source = 'yes' if remote_src else 'no'
 
-        command_parameters = f"src={src_path} dest={dest_path} remote_src={remote_source}"
+        command_parameters = f"src={src_path} dest='{dest_path}' remote_src='{remote_source}'"
         result = testinfra_host.ansible(ansible_command, command_parameters, check=False, become=become)
 
         if result.get('msg', None) and not ignore_errors:
@@ -202,7 +202,7 @@ class HostManager:
         become = self.get_host_variables(host).get('become', False) if become is None else become
 
         testinfra_host = self.get_host(host)
-        result = testinfra_host.ansible("slurp", f"src={path}", check=False, become=become)
+        result = testinfra_host.ansible("slurp", f"src='{path}'", check=False, become=become)
 
         if result.get('msg', None) and not ignore_errors:
             raise Exception(f"Error reading file {path} on host {host}: {result}")
@@ -245,7 +245,7 @@ class HostManager:
                 with open(file_path, 'w') as file_operator:
                     file_operator.write(file['content'])
 
-        result = testinfra_host.ansible(ansible_command, f"src={src_path} dest={dest_path}", check=False, become=become)
+        result = testinfra_host.ansible(ansible_command, f"src='{src_path}' dest='{dest_path}'", check=False, become=become)
 
         if (result['rc'] != 0 or not result) and not ignore_errors:
             raise Exception(f"Error creating file structure on host {host}: {result}")
@@ -276,10 +276,11 @@ class HostManager:
 
         if recreate:
             ansible_command = 'win_copy' if self.get_host_variables(host)['os_name'] == 'windows' else 'copy'
-            result = testinfra_host.ansible(ansible_command, f"dest={file_path} content=''", check=False, become=become)
+            result = testinfra_host.ansible(ansible_command, f"dest='{file_path}' content=''", check=False,
+                                            become=become)
         else:
             ansible_command = 'win_file' if self.get_host_variables(host)['os_name'] == 'windows' else 'file'
-            result = testinfra_host.ansible(ansible_command, f"path={file_path} state=touch", check=False,
+            result = testinfra_host.ansible(ansible_command, f"path='{file_path}' state=touch", check=False,
                                             become=become)
         if result.get('msg', None) and not ignore_errors:
             raise Exception(f"Error truncating file {file_path} on host {host}: {result}")
@@ -306,7 +307,7 @@ class HostManager:
 
         testinfra_host = self.get_host(host)
         ansible_command = 'win_file' if self.get_host_variables(host)['os_name'] == 'windows' else 'file'
-        result = testinfra_host.ansible(ansible_command, f"path={file_path} state=absent", check=False, become=become)
+        result = testinfra_host.ansible(ansible_command, f"path='{file_path}' state=absent", check=False, become=become)
 
         if result.get('msg', None) and not ignore_errors:
             raise Exception(f"Error removing file {file_path} on host {host}: {result}")
@@ -373,7 +374,7 @@ class HostManager:
 
         ansible_command = 'win_copy' if self.get_host_variables(host)['os_name'] == 'windows' else 'copy'
 
-        ansible_parameters = f"src={tmp_file.name} dest={path}"
+        ansible_parameters = f"src={tmp_file.name} dest='{path}'"
         ansible_parameters += f" owner={owner}" if owner else ''
         ansible_parameters += f" group={group}" if group else ''
         ansible_parameters += f" mode={mode}" if mode else ''
@@ -536,7 +537,7 @@ class HostManager:
         else:
             ansible_command = 'stat'
 
-        result = testinfra_host.ansible(ansible_command, f"path={path}", check=False, become=become)
+        result = testinfra_host.ansible(ansible_command, f"path='{path}'", check=False, become=become)
 
         if 'stat' not in result and not ignore_errors:
             raise Exception(f"Error getting stats of {path} on host {host}: {result}")
@@ -629,7 +630,7 @@ class HostManager:
             become = self.get_host_variables(host).get('become', False) if become is None else become
 
             testinfra_host = self.get_host(host)
-            ansible_arguments = f"path={path} block={block}"
+            ansible_arguments = f"path='{path}' block='{block}'"
             ansible_command = 'blockinfile'
 
             result = testinfra_host.ansible(ansible_command, ansible_arguments, check=False, become=become)
