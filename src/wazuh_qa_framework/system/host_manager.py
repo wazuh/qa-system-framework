@@ -529,7 +529,7 @@ class HostManager:
             ignore_errors (bool, optional): Ignore errors. Defaults to False.
 
         Returns:
-            dict: Command result.
+            dict: runner result.
 
         Raises:
             Exception: If the playbook fails.
