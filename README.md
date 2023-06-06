@@ -8,23 +8,71 @@
 
 # Wazuh QA framework
 
-This repository contains a toolset so that the tests and developers can build tests in a modular and efficient way.
+This repository contains a generic framework for the different QA processes.
 
 ## How to install
 
->Note: As precondition, you must have installed a python version >=3.8.0
+### Preconditions
 
-First, you have to install the python dependencies. These dependencies are needed to use and import the repository framework tools. You can install them using the `requirements.txt` file that is located in the root path of this repository:
+QA system framework require a python version >=3.7.1
 
+### VirtualEnvironment
+
+It is highly recommended to use a virtual environment when installing the QA framework. Follow the steps below to create and activate a virtual environment:
+
+- Create a virtual environment named "qa-system-env" by running the following command
 ```
-python3 -m pip install -r requirements.txt
+python -m venv qa-system-env
+```
+- Activate the virtual environment by executing the following command
+
+**Windows**
+```
+qa-system-env\Scripts\activate
 ```
 
-Next, you have to install the `wazuh-qa-framework` in order to use it as python dependency. To do this, you have to install the `setup.py` file that is located in the root path of this repository.
+**Linux/macOS**
+```
+source qa-system-env/bin/activate
+```
 
+By using a virtual environment, you can isolate the dependencies and ensure a clean installation of the QA framework without affecting your system's global Python environment.
+
+### Install
+
+**Base Framework**
+
+The base framework installation is intended for use in system test endpoints, offering various functionalities for different types of testing.
+
+To install only the base Wazuh QA Framework package, you can use the following pip command:
 ```
-python3 setup.py install
+pip install .
 ```
+> **Note**:
+> The base framework is designed exclusively for in-host operations.
+
+**Test system launcher**
+
+The test system launcher is the host responsible for initiating remote operations on the endpoint. This node requires specific dependencies, which can be installed using the following command:
+```
+pip install .[system_tests_launcher]
+```
+
+> **Warning**:
+> Please note that only Linux systems can act as executor nodes.
+
+> **Note**:
+> Optional dependencies also include the base requirements.
+
+
+**Unit Testing**
+
+To install the dependencies for running unit tests, use the following command:
+```
+pip install .[unit_testing]
+```
+
+By executing this command, you will install the necessary dependencies for unit testing.
 
 ## How to use
 
@@ -33,4 +81,3 @@ Once you have installed the `wazuh-qa-framework`, you can use and import it into
 ```
 from wazuh_qa_framework.x import y
 ```
-
