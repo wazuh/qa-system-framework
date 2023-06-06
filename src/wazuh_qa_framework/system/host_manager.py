@@ -542,3 +542,99 @@ class HostManager:
             raise Exception(f"Error getting stats of {path} on host {host}: {result}")
 
         return result
+
+    def install_package(self, host, package_name, become=None, ignore_errors=False):
+        """Install a package on a host.
+
+        Args:
+            host (str): Hostname
+            package_name (str): Package to install
+            become (bool): If no value is provided, it will be taken from the inventory. If the inventory does not
+            provide a value, it will default to False. Defaults None
+            ignore_errors (bool, optional): Ignore errors. Defaults to False.
+
+        Returns:
+            dict: Command result
+
+        Raises:
+            Exception: If the install cannot be run
+        """
+        become = self.get_host_variables(host).get('become', False) if become is None else become
+
+        testinfra_host = self.get_host(host)
+        ansible_arguments = f"name={package_name} state=present"
+        ansible_command = 'win_chocolatey' if self.get_host_variables(host)['os_name'] == 'windows' else 'package'
+
+        result = testinfra_host.ansible(ansible_command, ansible_arguments,
+                                        check=False, become=become)
+
+        if result.get('msg', None) and not ignore_errors:
+            raise Exception(f"Error installing package {package_name} on host {host}: {result}")
+
+        return result
+
+    def uninstall_package(self, host, package_name, become=None, ignore_errors=False):
+        """Uninstall a package on a host.
+
+        Args:
+            host (str): Hostname
+            package_name (str): Package to uninstall
+            become (bool): If no value is provided, it will be taken from the inventory. If the inventory does not
+            provide a value, it will default to False. Defaults None
+            ignore_errors (bool, optional): Ignore errors. Defaults to False.
+
+        Returns:
+            dict: Command result
+
+        Raises:
+            Exception: If the uninstall cannot be run
+        """
+        become = self.get_host_variables(host).get('become', False) if become is None else become
+
+        testinfra_host = self.get_host(host)
+        ansible_arguments = f"name={package_name} state=absent"
+        ansible_command = 'win_chocolatey' if self.get_host_variables(host)['os_name'] == 'windows' else 'package'
+
+        result = testinfra_host.ansible(ansible_command, ansible_arguments,
+                                        check=False, become=become)
+
+        if result.get('msg', None) and not ignore_errors:
+            raise Exception(f"Error installing package {package_name} on host {host}: {result}")
+
+        return result
+
+    def append_block_in_file(self, host, path, block, become=None, ignore_errors=False):
+        """Append a text block in file
+
+        Args:
+            host (str): Hostname
+            path (str): path for the file to insert a block
+            block (str, bytes): text to append to the file
+            become (bool): If no value is provided, it will be taken from the inventory. If the inventory does not
+            provide a value, it will default to False. Defaults None
+            ignore_errors (bool, optional): Ignore errors. Defaults to False.
+
+        Returns:
+            dict: Command result
+
+        Raises:
+            Exception: If the file cannot be modified
+        """
+        if self.get_host_variables(host)['os_name'] == 'windows':
+            file_content = self.get_file_content(host, path)
+            content = file_content + '\n' + block
+            result = self.modify_file_content(host, path, content)
+
+        else:
+            become = self.get_host_variables(host).get('become', False) if become is None else become
+
+            testinfra_host = self.get_host(host)
+            ansible_arguments = f"path={path} block={block}"
+            ansible_command = 'blockinfile'
+
+            result = testinfra_host.ansible(ansible_command, ansible_arguments, check=False, become=become)
+
+            if not result.get('msg', 'Block inserted') and not ignore_errors:
+                raise Exception(f"Error inserting a block in file {path} on host {host}: {result}")
+
+        return result
