@@ -518,7 +518,7 @@ class HostManager:
 
         return result
 
-    def run_playbook(self, playbook_path:str, extra_vars):
+    def run_playbook(self, playbook_path:str, extra_vars=None):
         """Run playbook on a host.
 
         Args:
@@ -532,14 +532,18 @@ class HostManager:
             dict: Command result.
 
         Raises:
-            Exception: If the command cannot be run.
+            Exception: If the playbook fails.
         """
-        print(self.inventory_path)
         inventory_dict = yaml.safe_load(open(self.inventory_path))
         runner = ansible_runner.run(
             playbook=playbook_path,
             inventory=inventory_dict,
             extravars=extra_vars,
         )
-        print(runner)
+
+        if runner.status == 'failed':
+            raise Exception(f"The playbook has failed")
+
+        if runner.status == 'timeout':
+            raise Exception(f"The playbook execution has failed due to a tiemout")
         return runner.rc == 0
