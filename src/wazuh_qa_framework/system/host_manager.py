@@ -245,7 +245,8 @@ class HostManager:
                 with open(file_path, 'w') as file_operator:
                     file_operator.write(file['content'])
 
-        result = testinfra_host.ansible(ansible_command, f"src='{src_path}' dest='{dest_path}'", check=False, become=become)
+        result = testinfra_host.ansible(ansible_command, f"src='{src_path}' dest='{dest_path}'", check=False,
+                                        become=become)
 
         if (result['rc'] != 0 or not result) and not ignore_errors:
             raise Exception(f"Error creating file structure on host {host}: {result}")
