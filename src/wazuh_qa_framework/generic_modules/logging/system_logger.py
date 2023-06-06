@@ -15,6 +15,7 @@ This module contains the following:
 """
 import logging
 import sys
+import inspect
 import os
 
 from wazuh_qa_framework.generic_modules.exceptions.exceptions import ValidationError
@@ -48,11 +49,11 @@ LOG_COLORS = {
 }
 
 FORMATERS = {
-    'basic': logging.Formatter('%(asctime)s — %(levelname)s — %(message)s')
+    'basic': logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 }
 
 
-class BaseLogger:
+class SystemLogger:
     """Logger class to manage modules logging.
 
     This class defines the main behavior of the loggers and will be used as a base class for the rest of the loggers
@@ -75,8 +76,9 @@ class BaseLogger:
         handlers (list(str)): Logging handlers.
         logging_file (str): File path were save the logging if the file handler has been specified.
         output_color (boolean): True for logging with output colors, False otherwise.
+        output_source (boolean): True for logging with the source of the message, False otherwise.
     """
-    def __init__(self, name, level='info', formatter='basic', handlers=None, logging_file=None,
+    def __init__(self, name, level='info', formatter='basic', handlers=None, logging_file=None, output_source=True,
                  output_color=True):
         self.name = name
         self.__logger = logging.getLogger(name)
@@ -85,6 +87,7 @@ class BaseLogger:
         self.logging_file = logging_file
         self.handlers = handlers
         self.output_color = output_color
+        self.output_source = output_source
 
     @property
     def name(self):
@@ -256,6 +259,24 @@ class BaseLogger:
         """
         return self.__output_color
 
+    @property
+    def output_source(self):
+        """Getter to obtain output_source attribute.
+
+        Returns:
+            boolean: True if output source is enabled, False otherwise.
+        """
+        return self.__output_source
+
+    @output_source.setter
+    def output_source(self, new_output_source):
+        """Setter of output_source attribute.
+
+        Args:
+            new_output_source (boolean): New output source value.
+        """
+        self.__output_source = new_output_source
+
     @output_color.setter
     def output_color(self, new_output_color):
         """Setter of output_color attribute.
@@ -264,6 +285,21 @@ class BaseLogger:
             new_output_color (boolean): New output color value.
         """
         self.__output_color = new_output_color
+
+    def generate_logging_message(self, message, level='info'):
+        final_message = message
+        if self.output_source:
+            curframe = inspect.currentframe()
+            calframe = inspect.getouterframes(curframe, 2)
+            class_name = calframe[2][0].f_locals['self'].__class__.__name__
+            method = calframe[2][3]
+            line = calframe[2][2]
+            message = message + f" [{class_name} {method}:{line}]"
+        if self.output_color:
+            color = LOG_COLORS[level]
+            final_message = f"{color}{message}{COLORS['CLEAR']}"
+
+        return final_message
 
     def log(self, message, level='info'):
         """Log a specific level message.
@@ -296,8 +332,7 @@ class BaseLogger:
         Args:
             message (str): Logging message.
         """
-        custom_message = f"{LOG_COLORS['debug']}{message}{COLORS['CLEAR']}" if self.output_color else message
-        self.logger.debug(custom_message)
+        self.logger.debug(self.generate_logging_message(message, level='debug'))
 
     def info(self, message):
         """INFO logging.
@@ -305,8 +340,7 @@ class BaseLogger:
         Args:
             message (str): Logging message.
         """
-        custom_message = f"{LOG_COLORS['info']}{message}{COLORS['CLEAR']}" if self.output_color else message
-        self.logger.info(custom_message)
+        self.logger.info(self.generate_logging_message(message, level='info'))
 
     def warning(self, message):
         """WARNING logging.
@@ -314,8 +348,7 @@ class BaseLogger:
         Args:
             message (str): Logging message.
         """
-        custom_message = f"{LOG_COLORS['warning']}{message}{COLORS['CLEAR']}" if self.output_color else message
-        self.logger.warning(custom_message)
+        self.logger.warning(self.generate_logging_message(message, level='warning'))
 
     def error(self, message):
         """ERROR logging.
@@ -323,8 +356,7 @@ class BaseLogger:
         Args:
             message (str): Logging message.
         """
-        custom_message = f"{LOG_COLORS['error']}{message}{COLORS['CLEAR']}" if self.output_color else message
-        self.logger.error(custom_message)
+        self.logger.error(self.generate_logging_message(message, level='error'))
 
     def critical(self, message):
         """CRITICAL logging.
@@ -332,8 +364,7 @@ class BaseLogger:
         Args:
             message (str): Logging message.
         """
-        custom_message = f"{LOG_COLORS['critical']}{message}{COLORS['CLEAR']}" if self.output_color else message
-        self.logger.critical(custom_message)
+        self.logger.critical(self.generate_logging_message(message, level='critical'))
 
     def __str__(self):
         """Redefine the logger object representation.

@@ -276,7 +276,8 @@ class HostManager:
 
         if recreate:
             ansible_command = 'win_copy' if self.get_host_variables(host)['os_name'] == 'windows' else 'copy'
-            result = testinfra_host.ansible(ansible_command, f"dest={file_path} content=''", check=False, become=become)
+            result = testinfra_host.ansible(ansible_command, f"dest='{file_path}' content=''", check=False,
+                                            become=become)
         else:
             ansible_command = 'win_file' if self.get_host_variables(host)['os_name'] == 'windows' else 'file'
             result = testinfra_host.ansible(ansible_command, f"path={file_path} state=touch", check=False,
@@ -588,6 +589,17 @@ class HostManager:
             boolean: Host is a macos host
         """
         return self.get_host_variables(host)['os_name'] == 'darwin'
+
+    def is_solaris(self, host):
+        """Check if host is solaris
+
+        Args:
+            host (str): Hostname
+
+        Returns:
+            boolean: Host is a solaris host
+        """
+        return self.get_host_variables(host)['os_name'] == 'solaris'
 
     def install_package(self, host, package_name, become=None, ignore_errors=False):
         """Install a package on a host.

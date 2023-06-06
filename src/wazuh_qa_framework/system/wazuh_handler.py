@@ -6,10 +6,11 @@ import os
 import re
 from multiprocessing.pool import ThreadPool
 
-from wazuh_qa_framework.generic_modules.logging.base_logger import BaseLogger
+from wazuh_qa_framework.generic_modules.logging.base_logger import SystemLogger
 from wazuh_qa_framework.system.host_manager import HostManager
+from wazuh_qa_framework.global_variables.daemons import WAZUH_ANGENT_WINDOWS_SERVICE_NAME
 
-WAZUH_ANGENT_WINDOWS_SERVICE_NAME = 'WazuhSvc'
+
 DEFAULT_INSTALL_PATH = {
     'linux': '/var/ossec',
     'windows': 'C:\\Program Files\\ossec-agent',
@@ -149,7 +150,7 @@ class WazuhEnvironmentHandler(HostManager):
         # Define logger
         logger_level = 'debug' if debug else 'info'
         logger_formatter = 'verbose' if debug else 'basic'
-        self.logger = BaseLogger('WazuhEnvironment', level=logger_level)
+        self.logger = SystemLogger('WazuhEnvironment', level=logger_level)
 
     def get_file_fullpath(self, host, filename, group=None):
         """Get the path of common configuration and log file in the specified host.
