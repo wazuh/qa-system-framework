@@ -285,14 +285,19 @@ class BaseLogger:
         """
         self.__output_color = new_output_color
 
-    def generate_logging_message(self, message):
+    def generate_logging_message(self, message, level='info'):
         final_message = message
         if self.output_line:
             curframe = inspect.currentframe()
             calframe = inspect.getouterframes(curframe, 2)
-            message = message + f" [{calframe[1][3]}:{calframe[1][2]}]"
+            class_name = calframe[2][0].f_locals['self'].__class__.__name__
+            method = calframe[2][3]
+            line = calframe[2][2]
+
+            message = message + f" [{class_name} {method}:{line}]"
         if self.output_color:
-            final_message = f"{LOG_COLORS['info']}{message}{COLORS['CLEAR']}"
+            color = LOG_COLORS[level]
+            final_message = f"{color}{message}{COLORS['CLEAR']}"
 
         return final_message
 
@@ -327,7 +332,7 @@ class BaseLogger:
         Args:
             message (str): Logging message.
         """
-        self.logger.debug(generate_logging_message(message))
+        self.logger.debug(self.generate_logging_message(message, level='debug'))
 
     def info(self, message):
         """INFO logging.
@@ -335,7 +340,7 @@ class BaseLogger:
         Args:
             message (str): Logging message.
         """
-        self.logger.info(generate_logging_message(message))
+        self.logger.info(self.generate_logging_message(message, level='info'))
 
     def warning(self, message):
         """WARNING logging.
@@ -343,7 +348,7 @@ class BaseLogger:
         Args:
             message (str): Logging message.
         """
-        self.logger.warning(generate_logging_message(message))
+        self.logger.warning(self.generate_logging_message(message, level='warning'))
 
     def error(self, message):
         """ERROR logging.
@@ -351,7 +356,7 @@ class BaseLogger:
         Args:
             message (str): Logging message.
         """
-        self.logger.error(generate_logging_message(message))
+        self.logger.error(self.generate_logging_message(message, level='error'))
 
     def critical(self, message):
         """CRITICAL logging.
@@ -359,7 +364,7 @@ class BaseLogger:
         Args:
             message (str): Logging message.
         """
-        self.logger.critical(generate_logging_message(message))
+        self.logger.critical(self.generate_logging_message(message, level='critical'))
 
     def __str__(self):
         """Redefine the logger object representation.

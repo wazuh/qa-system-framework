@@ -24,7 +24,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-system_executor_node = [
+system_tests_launcher = [
     'ansible>=4.10.0',
     'pytest-testinfra>=6.7.0',
     'pytest==7.3.1'
