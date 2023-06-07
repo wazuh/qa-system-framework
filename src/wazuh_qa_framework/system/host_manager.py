@@ -643,7 +643,7 @@ class HostManager:
 
         return result
 
-    def run_playbook(self, playbook_path:str, extra_vars=None):
+    def run_playbook(self, playbook_path:str, extra_vars=None): 
         """Run playbook on a host.
 
         Args:
