@@ -4,6 +4,7 @@
 
 import os
 import re
+from multiprocessing.pool import ThreadPool
 
 from wazuh_qa_framework.system.host_manager import HostManager
 
@@ -139,8 +140,9 @@ def get_wazuh_file_path(custom_installation_path=None, os_host='linux', file_nam
 
 
 class WazuhEnvironmentHandler(HostManager):
-    def __init__(self, inventory_path):
+    def __init__(self, inventory_path, debug=False, max_workers=10):
         super().__init__(inventory_path)
+        self.pool = ThreadPool(max_workers)
 
     def get_file_fullpath(self, host, filename, group=None):
         """Get the path of common configuration and log file in the specified host.
@@ -517,6 +519,7 @@ class WazuhEnvironmentHandler(HostManager):
                     id_value = line.split(',')[0].split(': ')[1].strip()
                     agent_ids.append(id_value)
                     break
+
         return agent_ids
 
     def restart_manager(self, host):
@@ -592,7 +595,8 @@ class WazuhEnvironmentHandler(HostManager):
             host_type = self.get_host_variables(host).get('type')
             if 'master' == host_type or 'worker' == host_type:
                 self.truncate_file(host , f'{logs_path}/cluster.log', recreate=True, become=True, ignore_errors=False)
-                
+
+
     def clean_agents(self, agents=None):
         """Stop agents, remove them from manager and clean their client keys
 
@@ -600,6 +604,7 @@ class WazuhEnvironmentHandler(HostManager):
             agents (_type_, agents_list): Agents list. Defaults to None.
         """
         pass
+
 
     def restart_agents(self, agent_list):
         """Restart agents
@@ -614,7 +619,7 @@ class WazuhEnvironmentHandler(HostManager):
             else:
                 self.run_command(agent, f"service wazuh-agent restart", become=True, ignore_errors=False)
 
-        
+
     def remove_agents_from_manager(self, agent_list, manager=None, method='cmd', parallel=True , logs=False, 
                                    restart=False):
         """Remove agents from manager
@@ -635,22 +640,20 @@ class WazuhEnvironmentHandler(HostManager):
 
         # Remove agent by cmd core function
         def remove_agent_cmd(id):
-            print(id)
             self.run_command(manager , f"/var/ossec/bin/manage_agents -r {id}", True)
-            
+
         # Remove processes
-        if parallel:
-            if method == 'cmd':
+        if method == 'cmd':
+            if parallel:
                 self.pool.map(remove_agent_cmd, agent_ids)
-        else:
-            if method == 'cmd':
+            else:
                 for id in agent_ids:
                     remove_agent_cmd(id)
-            elif method == 'api':
-                agent_string = ','.join(agent_ids)
-                self.make_api_call('manager1', port=55000, method='DELETE', 
-                                   endpoint=f'/agents?pretty=true&older_than=0s&agents_list={agent_string}&status=all', 
-                                   request_body=None, token=None, check=False)
+        else:
+            agent_string = ','.join(agent_ids)
+            self.make_api_call('manager1', port=55000, method='DELETE', 
+                               endpoint=f'/agents?pretty=true&older_than=0s&agents_list={agent_string}&status=all', 
+                               request_body=None, token=None, check=False)
 
         # Remove logs
         if logs:
