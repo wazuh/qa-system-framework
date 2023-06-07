@@ -123,7 +123,7 @@ def get_wazuh_file_path(custom_installation_path=None, os_host='linux', file_nam
         'custom_rule_directory': {
             'files': ['local_rules.xml'],
             'path_calculator': lambda filename: os.path.join(get_custom_rules_directory_path(installation_path),
-                                                              filename)
+                                                             filename)
         },
         'group_configuration': {
             'files': ['agent.conf'],
@@ -589,17 +589,16 @@ class WazuhEnvironmentHandler(HostManager):
         for host in hosts:
             logs_path = self.get_logs_directory_path(host)
             if self.get_host_variables(host)['os_name'] == 'windows':
-                self.truncate_file(host , f'{logs_path}/ossec.log', recreate=True, become=False, ignore_errors=False)
+                self.truncate_file(host, f'{logs_path}/ossec.log', recreate=True, become=False, ignore_errors=False)
             else:
-                self.truncate_file(host , f'{logs_path}/ossec.log', recreate=True, become=True, ignore_errors=False)
+                self.truncate_file(host, f'{logs_path}/ossec.log', recreate=True, become=True, ignore_errors=False)
             host_type = self.get_host_variables(host).get('type')
             if 'master' == host_type or 'worker' == host_type:
-                self.truncate_file(host , f'{logs_path}/cluster.log', recreate=True, become=True, ignore_errors=False)
+                self.truncate_file(host, f'{logs_path}/cluster.log', recreate=True, become=True, ignore_errors=False)
 
 
     def clean_agents(self, agents=None):
         """Stop agents, remove them from manager and clean their client keys
-
         Args:
             agents (_type_, agents_list): Agents list. Defaults to None.
         """
@@ -640,7 +639,7 @@ class WazuhEnvironmentHandler(HostManager):
 
         # Remove agent by cmd core function
         def remove_agent_cmd(id):
-            self.run_command(manager , f"/var/ossec/bin/manage_agents -r {id}", True)
+            self.run_command(manager, f"/var/ossec/bin/manage_agents -r {id}", True)
 
         # Remove processes
         if method == 'cmd':
