@@ -9,7 +9,7 @@ from wazuh_qa_framework.system.host_manager import HostManager
 
 DEFAULT_INSTALL_PATH = {
     'linux': '/var/ossec',
-    'windows': 'C:\\Program Files\\ossec-agent',
+    'windows': 'C:\\Program Files (x86)\\ossec-agent',
     'darwin': '/Library/Ossec'
 }
 
@@ -51,7 +51,7 @@ def get_archives_directory_path(custom_installation_path=None):
 
 def get_logs_directory_path(custom_installation_path=None, os_host='linux'):
     installation_path = custom_installation_path if custom_installation_path else DEFAULT_INSTALL_PATH[os_host]
-    return installation_path if os_host == 'windows' else os.path.join(installation_path, 'logs')
+    return installation_path + '\\logs' if os_host == 'windows' else os.path.join(installation_path, 'logs')
 
 
 def get_shared_directory_path(custom_installation_path=None, os_host='linux'):
@@ -485,15 +485,6 @@ class WazuhEnvironmentHandler(HostManager):
         manager_list = self.get_managers()
         return 'agent' if host in agent_list else 'manager' if host in manager_list else None
 
-    def restart_agent(self, host):
-        """Restart agent
-
-        Args:
-            host (str): Hostname
-            systemd (bool, optional): Restart using systemd. Defaults to False.
-        """
-        pass
-
     def get_agents_info(self):
         """Get registered agents information.
 
@@ -502,21 +493,31 @@ class WazuhEnvironmentHandler(HostManager):
         """
         pass
 
-    def get_agents_id(self, agents_list=None):
-        """Get agents id
-
-        Returns:
-            List: Agents id list
-        """
-        pass
-
-    def restart_agents(self, agent_list=None, parallel=True):
-        """Restart list of agents
-
+    def get_agents_id(self, agent_list):
+        """Get agent ids
         Args:
-            agent_list (list, optional): Agent list. Defaults to None.
+            agents_list (_type_, agents_list): Agents list.
+        Return:
+            dict: agent_ids
         """
-        pass
+        # Getting hostnames
+        host_names = []
+        for agent in agent_list:
+            host_names.append(self.run_command(agent, 'hostname')[1])
+
+        # Getting id - hostnames from manager
+        agent_control = self.run_command('manager1', '/var/ossec/bin/manage_agents -l', True)[1]
+
+        # Creating id_list from hostnames
+        agent_ids = []
+        for hostname in host_names:
+            hostname = hostname.replace('\r', '').replace('\n', '')
+            for line in agent_control.split('\n'):
+                if 'Name: ' + hostname in line:
+                    id_value = line.split(',')[0].split(': ')[1].strip()
+                    agent_ids.append(id_value)
+                    break
+        return agent_ids
 
     def restart_manager(self, host):
         """Restart manager
@@ -576,6 +577,22 @@ class WazuhEnvironmentHandler(HostManager):
         """
         pass
 
+    def clean_logs(self, hosts):
+        """Remove host logs
+        Args:
+            hosts (_type_, hosts): host list.
+        """
+        # Clean ossec.log and and cluster.log
+        for host in hosts:
+            logs_path = self.get_logs_directory_path(host)
+            if self.get_host_variables(host)['os_name'] == 'windows':
+                self.truncate_file(host , f'{logs_path}/ossec.log', recreate=True, become=False, ignore_errors=False)
+            else:
+                self.truncate_file(host , f'{logs_path}/ossec.log', recreate=True, become=True, ignore_errors=False)
+            host_type = self.get_host_variables(host).get('type')
+            if 'master' == host_type or 'worker' == host_type:
+                self.truncate_file(host , f'{logs_path}/cluster.log', recreate=True, become=True, ignore_errors=False)
+                
     def clean_agents(self, agents=None):
         """Stop agents, remove them from manager and clean their client keys
 
@@ -584,18 +601,64 @@ class WazuhEnvironmentHandler(HostManager):
         """
         pass
 
-    def remove_agents_from_manager(self, agents=None, status='all', older_than='0s'):
+    def restart_agents(self, agent_list):
+        """Restart agents
+        Args:
+            agents_list (_type_, agents_list): Agents list.
+        """
+        # Clean ossec.log and and cluster.log
+        for agent in agent_list:
+            if self.get_host_variables(agent).get('os_name') == 'windows':
+                self.run_command(agent, f"NET STOP WazuhSvc", become=False, ignore_errors=False)
+                self.run_command(agent, f"NET START WazuhSvc", become=False, ignore_errors=False)
+            else:
+                self.run_command(agent, f"service wazuh-agent restart", become=True, ignore_errors=False)
+
+        
+    def remove_agents_from_manager(self, agent_list, manager=None, method='cmd', parallel=True , logs=False, 
+                                   restart=False):
         """Remove agents from manager
 
         Args:
-            agents (list, optional): Agents list. Defaults to None.
-            status (str, optional): Agents status. Defaults to 'all'.
-            older_than (str, optional): Older than parameter. Defaults to '0s'.
-
-        Returns:
-            dict: API response
+            agent_list (list, optional): Agents list. Defaults to None.
+            manager (str, optional): Name of manager. Defaults to None.
+            method (str): Method to be used to remove agents, Defaults to cmd.
+            parallel (str): In case that cmd method is used, it defines the use of threads for remove. Defaults to True.
+            logs (str): Remove logs from agents. Defaults to False.
+            restart (str): Restart agents. Defaults to False.
         """
-        pass
+        if manager is None: manager = 'manager1'
+        if method == 'api': parallel = False
+
+        # Getting agent_ids list
+        agent_ids = self.get_agents_id(agent_list)
+
+        # Remove agent by cmd core function
+        def remove_agent_cmd(id):
+            print(id)
+            self.run_command(manager , f"/var/ossec/bin/manage_agents -r {id}", True)
+            
+        # Remove processes
+        if parallel:
+            if method == 'cmd':
+                self.pool.map(remove_agent_cmd, agent_ids)
+        else:
+            if method == 'cmd':
+                for id in agent_ids:
+                    remove_agent_cmd(id)
+            elif method == 'api':
+                agent_string = ','.join(agent_ids)
+                self.make_api_call('manager1', port=55000, method='DELETE', 
+                                   endpoint=f'/agents?pretty=true&older_than=0s&agents_list={agent_string}&status=all', 
+                                   request_body=None, token=None, check=False)
+
+        # Remove logs
+        if logs:
+            self.clean_logs(agent_list)
+
+        # Restarting agents
+        if restart:
+            self.restart_agents(agent_list)
 
     def stop_manager(self, manager):
         """Stop manager
