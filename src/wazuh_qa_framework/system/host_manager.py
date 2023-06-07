@@ -175,7 +175,7 @@ class HostManager:
         ansible_command = 'win_copy' if self.get_host_variables(host)['os_name'] == 'windows' else 'copy'
         remote_source = 'yes' if remote_src else 'no'
 
-        command_parameters = f"src={src_path} dest='{dest_path}' remote_src='{remote_source}'"
+        command_parameters = f"src='{src_path}' dest='{dest_path}' remote_src={remote_source}"
         result = testinfra_host.ansible(ansible_command, command_parameters, check=False, become=become)
 
         if result.get('msg', None) and not ignore_errors:
@@ -375,7 +375,7 @@ class HostManager:
 
         ansible_command = 'win_copy' if self.get_host_variables(host)['os_name'] == 'windows' else 'copy'
 
-        ansible_parameters = f"src={tmp_file.name} dest='{path}'"
+        ansible_parameters = f"src='{tmp_file.name}' dest='{path}'"
         ansible_parameters += f" owner={owner}" if owner else ''
         ansible_parameters += f" group={group}" if group else ''
         ansible_parameters += f" mode={mode}" if mode else ''
