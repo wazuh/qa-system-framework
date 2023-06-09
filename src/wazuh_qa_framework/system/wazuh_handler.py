@@ -596,14 +596,12 @@ class WazuhEnvironmentHandler(HostManager):
             if 'master' == host_type or 'worker' == host_type:
                 self.truncate_file(host, f'{logs_path}/cluster.log', recreate=True, become=True, ignore_errors=False)
 
-
     def clean_agents(self, agents=None):
         """Stop agents, remove them from manager and clean their client keys
         Args:
             agents (_type_, agents_list): Agents list. Defaults to None.
         """
         pass
-
 
     def restart_agents(self, agent_list):
         """Restart agents
@@ -618,8 +616,7 @@ class WazuhEnvironmentHandler(HostManager):
             else:
                 self.run_command(agent, f"service wazuh-agent restart", become=True, ignore_errors=False)
 
-
-    def remove_agents_from_manager(self, agent_list, manager=None, method='cmd', parallel=True , logs=False, 
+    def remove_agents_from_manager(self, agent_list, manager=None, method='cmd', parallel=True, logs=False, 
                                    restart=False):
         """Remove agents from manager
 
@@ -631,8 +628,8 @@ class WazuhEnvironmentHandler(HostManager):
             logs (str): Remove logs from agents. Defaults to False.
             restart (str): Restart agents. Defaults to False.
         """
-        if manager is None: manager = 'manager1'
-        if method == 'api': parallel = False
+        manager = 'manager1' if manager is None else manager
+        parallel = False if method == 'api' else parallel
 
         # Getting agent_ids list
         agent_ids = self.get_agents_id(agent_list)
@@ -650,8 +647,8 @@ class WazuhEnvironmentHandler(HostManager):
                     remove_agent_cmd(id)
         else:
             agent_string = ','.join(agent_ids)
-            self.make_api_call('manager1', port=55000, method='DELETE', 
-                               endpoint=f'/agents?pretty=true&older_than=0s&agents_list={agent_string}&status=all', 
+            self.make_api_call('manager1', port=55000, method='DELETE',
+                               endpoint=f'/agents?pretty=true&older_than=0s&agents_list={agent_string}&status=all',
                                request_body=None, token=None, check=False)
 
         # Remove logs
