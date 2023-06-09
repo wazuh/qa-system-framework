@@ -640,3 +640,39 @@ class HostManager:
                 raise Exception(f"Error inserting a block in file {path} on host {host}: {result}")
 
         return result
+
+    def run_python_script(self, host, script, become=None, ignore_errors=False):
+        """Run a command on a host.
+
+        Args:
+            host (str): Hostname
+            script (str): Script name or path
+            become (bool): If no value is provided, it will be taken from the inventory. If the inventory does not
+            provide a value, it will default to False. Defaults None
+            ignore_errors (bool, optional): Ignore errors. Defaults to False.
+
+        Returns:
+            dict: Python script result
+
+        Raises:
+            Exception: If the Python script cannot be run
+        """
+        testinfra_host = self.get_host(host)
+        rc = None
+        ansible_command = 'script'
+
+        if self.get_host_variables(host)['os_name'] == 'windows':
+
+            ansible_arguments = f"'{script} executable=python'"
+            result = testinfra_host.ansible(ansible_command, ansible_arguments, check=False)
+
+        else:
+            become = self.get_host_variables(host).get('become', False) if become is None else become
+            ansible_arguments = f"'{script}'"
+            result = testinfra_host.ansible(ansible_command, ansible_arguments, check=False, become=become)
+
+        rc = result.get('rc')
+        if rc != 0 and not ignore_errors:
+            raise Exception(f"Error running python script {script} on host {host}: {result}")
+
+        return result
