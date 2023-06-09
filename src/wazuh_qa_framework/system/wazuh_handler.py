@@ -616,7 +616,7 @@ class WazuhEnvironmentHandler(HostManager):
             else:
                 self.run_command(agent, f"service wazuh-agent restart", become=True, ignore_errors=False)
 
-    def remove_agents_from_manager(self, agent_list, manager=None, method='cmd', parallel=True, logs=False, 
+    def remove_agents_from_manager(self, agent_list, manager=None, method='cmd', parallel=True, logs=False,
                                    restart=False):
         """Remove agents from manager
 
