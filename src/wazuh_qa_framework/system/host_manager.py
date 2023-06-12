@@ -648,7 +648,6 @@ class HostManager:
 
         Args:
             playbook_path (str): Playbook path to run.
-            path (str): The full path of the file/object to get the facts of.
             extra_vars (dict): Extra variables to be passed to Ansible at runtime
 
         Returns:
