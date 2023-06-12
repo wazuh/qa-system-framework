@@ -658,14 +658,11 @@ class HostManager:
             Exception: If the Python script cannot be run
         """
         testinfra_host = self.get_host(host)
-        rc = None
         ansible_command = 'script'
 
         if self.get_host_variables(host)['os_name'] == 'windows':
-
             ansible_arguments = f"'{script} executable=python'"
             result = testinfra_host.ansible(ansible_command, ansible_arguments, check=False)
-
         else:
             become = self.get_host_variables(host).get('become', False) if become is None else become
             ansible_arguments = f"'{script}'"
