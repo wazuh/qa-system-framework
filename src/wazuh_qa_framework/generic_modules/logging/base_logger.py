@@ -300,7 +300,7 @@ class BaseLogger():
 
                 method = calframe_origin[3]
                 line = calframe_origin[2]
-                message = message + f" [{origin_class} {method}:{line}]" if origin_class \
+                final_message = message + f" [{origin_class} {method}:{line}]" if origin_class \
                     else message + f"[{method}:{line}]"
 
             except Exception:
