@@ -462,15 +462,29 @@ class WazuhEnvironmentHandler(HostManager):
                 self.configure_host(host, configurations)
         self.logger.info('Environment configured successfully')
 
-    def change_agents_configure_manager(self, agent_list, manager, use_manager_name=True):
+    def change_agents_configured_manager(self, agent_list, manager, use_manager_name=True):
         """Change configured manager of specified agent
 
         Args:
-            agent (str): Agent name.
+            agent_list (list): List of agents that configuration will be changed.
             manager (str): Manager name in the environment/Manager or IP.
             use_manager_name (Boolean): Replace manager name with manager IP. Default True
         """
-        pass
+        if type(agent_list) != list:
+            raise TypeError('Expected a list of agents')
+
+        new_configuration = {}
+        new_manager = manager if use_manager_name else self.get_host_ansible_ip(manager)
+
+        server_block = {'server': {'elements': [{'address': {'value': new_manager}}]}}
+        configuration = [{'section': 'client', 'elements': [server_block]}]
+
+        for agent in agent_list:
+            new_configuration[agent] = {
+                'ossec.conf': configuration
+            }
+
+        self.configure_environment(new_configuration)
 
     def backup_host_configuration(self, configuration_list):
         """Backup specified files in
@@ -907,6 +921,7 @@ class WazuhEnvironmentHandler(HostManager):
             bool: True if host is manager
         """
         return host in self.get_managers()
+
 
 def set_section_wazuh_conf(sections, template=None):
     """
