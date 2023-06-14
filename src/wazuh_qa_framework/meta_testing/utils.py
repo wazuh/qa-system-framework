@@ -16,6 +16,7 @@ import os
 import sys
 import logging
 
+CUSTOM_PATTERN = 'wazuh-modulesd:aws-s3: INFO: Executing Service Analysis'
 CUSTOM_REGEX = r'.*wazuh-modulesd:aws-s3: INFO: Executing Service Analysis'
 DEFAULT_LOG_MESSAGE = '2023/02/14 09:49:47 wazuh-modulesd:aws-s3: INFO: Executing Service Analysis'
 FREE_API_URL = 'https://jsonplaceholder.typicode.com'

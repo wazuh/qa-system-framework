@@ -12,7 +12,7 @@ import os
 import sys
 import pytest
 
-from wazuh_qa_framework.generic_modules.tools.file_regex_monitor import FileRegexMonitor
+from wazuh_qa_framework.generic_modules.tools.file_regex_monitor import MonitoringObject, FileRegexMonitor
 from wazuh_qa_framework.generic_modules.threading.thread import Thread
 from wazuh_qa_framework.meta_testing.utils import append_log
 from wazuh_qa_framework.meta_testing.configuration import get_test_cases_data
@@ -73,8 +73,8 @@ def test_pre_encoding(case_parameters, create_destroy_sample_file):
     append_log(log_file, f"{case_parameters['pre_text']}\n", encoding=case_parameters['encoding'])
 
     # Start the file regex monitoring
-    file_regex_monitor_parameters = {'monitored_file': log_file, 'callback': custom_callback, 'timeout': 1,
-                                     'only_new_events': False}
+    monitoring = MonitoringObject(callback=custom_callback, timeout=1, monitored_file=log_file)
+    file_regex_monitor_parameters = {'monitoring': monitoring, 'only_new_events': False}
     file_regex_monitor_process = Thread(target=FileRegexMonitor, parameters=file_regex_monitor_parameters)
     file_regex_monitor_process.start()
 
@@ -108,8 +108,8 @@ def test_post_encoding(case_parameters, create_destroy_sample_file):
     log_file = create_destroy_sample_file
 
     # Start the file regex monitoring
-    file_regex_monitor_parameters = {'monitored_file': log_file, 'callback': custom_callback, 'timeout': 1,
-                                     'only_new_events': False}
+    monitoring = MonitoringObject(callback=custom_callback, timeout=1, monitored_file=log_file)
+    file_regex_monitor_parameters = {'monitoring': monitoring, 'only_new_events': False}
     file_regex_monitor_process = Thread(target=FileRegexMonitor, parameters=file_regex_monitor_parameters)
     file_regex_monitor_process.start()
 
@@ -146,8 +146,8 @@ def test_new_encoding(create_destroy_sample_file):
     append_log(log_file, 'ÿð¤¢é')
 
     # Start the file regex monitoring
-    file_regex_monitor_parameters = {'monitored_file': log_file, 'callback': custom_callback, 'timeout': 1,
-                                     'only_new_events': False}
+    monitoring = MonitoringObject(callback=custom_callback, timeout=1, monitored_file=log_file)
+    file_regex_monitor_parameters = {'monitoring': monitoring, 'only_new_events': False}
     file_regex_monitor_process = Thread(target=FileRegexMonitor, parameters=file_regex_monitor_parameters)
     file_regex_monitor_process.start()
 

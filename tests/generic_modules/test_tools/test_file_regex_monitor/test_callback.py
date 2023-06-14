@@ -11,7 +11,7 @@ import time
 import pytest
 
 from wazuh_qa_framework.meta_testing.utils import custom_callback, append_log, DEFAULT_LOG_MESSAGE
-from wazuh_qa_framework.generic_modules.tools.file_regex_monitor import FileRegexMonitor
+from wazuh_qa_framework.generic_modules.tools.file_regex_monitor import MonitoringObject, FileRegexMonitor
 from wazuh_qa_framework.generic_modules.exceptions.exceptions import TimeoutError
 from wazuh_qa_framework.generic_modules.threading.thread import Thread
 
@@ -37,7 +37,8 @@ def test_callback_case_1(create_destroy_sample_file):
     log_file = create_destroy_sample_file
 
     # Start the file regex monitoring
-    file_regex_monitor_parameters = {'monitored_file': log_file, 'callback': custom_callback, 'timeout': 1}
+    monitoring = MonitoringObject(callback=custom_callback, timeout=1, monitored_file=log_file)
+    file_regex_monitor_parameters = {'monitoring': monitoring}
     file_regex_monitor_process = Thread(target=FileRegexMonitor, parameters=file_regex_monitor_parameters)
     file_regex_monitor_process.start()
 
@@ -72,7 +73,8 @@ def test_callback_case_2(create_destroy_sample_file):
     log_file = create_destroy_sample_file
 
     # Start the file regex monitoring
-    file_regex_monitor_parameters = {'monitored_file': log_file, 'callback': custom_callback, 'timeout': 1}
+    monitoring = MonitoringObject(callback=custom_callback, timeout=1, monitored_file=log_file)
+    file_regex_monitor_parameters = {'monitoring': monitoring}
     file_regex_monitor_process = Thread(target=FileRegexMonitor, parameters=file_regex_monitor_parameters)
     file_regex_monitor_process.start()
 
@@ -111,7 +113,8 @@ def test_callback_case_3(create_destroy_sample_file):
     log_file = create_destroy_sample_file
 
     # Start the file regex monitoring
-    file_regex_monitor_parameters = {'monitored_file': log_file, 'callback': custom_callback, 'timeout': 1}
+    monitoring = MonitoringObject(callback=custom_callback, timeout=1, monitored_file=log_file)
+    file_regex_monitor_parameters = {'monitoring': monitoring}
     file_regex_monitor_process = Thread(target=FileRegexMonitor, parameters=file_regex_monitor_parameters)
     file_regex_monitor_process.start()
 
