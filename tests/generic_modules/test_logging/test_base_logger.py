@@ -13,6 +13,7 @@ Test cases:
 
 import pytest
 import os
+import re
 
 from tempfile import gettempdir
 from wazuh_qa_framework.generic_modules.logging.base_logger import BaseLogger
@@ -61,10 +62,12 @@ def test_levels(level, create_destroy_sample_file, expected_lines):
 
 
 @pytest.mark.parametrize('source, color, message, expected_message', [(False, True, 'hello',
-                                                                       'INFO - \x1b[94mhello\x1b[0m'),
+                                                                       'INFO - \\x1b[94mhello\\x1b[0m'),
                                                                       (True, False, 'hello',
                                                                        'INFO - hello[test_output_color'),
-                                                                      (False, False, 'hello', 'INFO - hello')])
+                                                                      (False, False, 'hello', 'INFO - hello'),
+                                                                      (True, True, 'hello',
+                                                                      'INFO - \\x1b[94mhello[test_output_color')])
 def test_output_color(source, color, message, expected_message, create_destroy_sample_file):
     """Check if the output is colorized when set.
 
@@ -92,7 +95,9 @@ def test_output_color(source, color, message, expected_message, create_destroy_s
 
     # Log a line and check the log file content
     logger.info(message)
-    log_data = read_file(SAMPLE_FILE).strip()
+    log_data = (read_file(SAMPLE_FILE).strip())
 
     # Check if the log content has the color marks.
-    assert expected_message in log_data
+    pattern = re.escape(expected_message)
+
+    assert re.findall(pattern, repr(log_data))

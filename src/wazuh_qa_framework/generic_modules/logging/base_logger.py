@@ -308,7 +308,7 @@ class BaseLogger():
 
         if self.output_color:
             color = LOG_COLORS[level]
-            final_message = f"{color}{message}{COLORS['CLEAR']}"
+            final_message = f"{color}{final_message}{COLORS['CLEAR']}"
 
         return final_message
 
