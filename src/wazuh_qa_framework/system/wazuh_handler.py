@@ -4,8 +4,12 @@
 
 import os
 import re
+from multiprocessing.pool import ThreadPool
 
+from wazuh_qa_framework.generic_modules.logging.base_logger import BaseLogger
+from wazuh_qa_framework.global_variables.daemons import WAZUH_ANGENT_WINDOWS_SERVICE_NAME
 from wazuh_qa_framework.system.host_manager import HostManager
+
 
 DEFAULT_INSTALL_PATH = {
     'linux': '/var/ossec',
@@ -122,7 +126,7 @@ def get_wazuh_file_path(custom_installation_path=None, os_host='linux', file_nam
         'custom_rule_directory': {
             'files': ['local_rules.xml'],
             'path_calculator': lambda filename: os.path.join(get_custom_rules_directory_path(installation_path),
-                                                              filename)
+                                                             filename)
         },
         'group_configuration': {
             'files': ['agent.conf'],
@@ -139,8 +143,14 @@ def get_wazuh_file_path(custom_installation_path=None, os_host='linux', file_nam
 
 
 class WazuhEnvironmentHandler(HostManager):
-    def __init__(self, inventory_path):
+    def __init__(self, inventory_path, debug=False, max_workers=10):
         super().__init__(inventory_path)
+        self.pool = ThreadPool(max_workers)
+
+        # Define logger
+        logger_level = 'debug' if debug else 'info'
+        logger_formatter = 'verbose' if debug else 'basic'
+        self.logger = BaseLogger('WazuhEnvironment', level=logger_level, output_source=True)
 
     def get_file_fullpath(self, host, filename, group=None):
         """Get the path of common configuration and log file in the specified host.
@@ -485,15 +495,6 @@ class WazuhEnvironmentHandler(HostManager):
         manager_list = self.get_managers()
         return 'agent' if host in agent_list else 'manager' if host in manager_list else None
 
-    def restart_agent(self, host):
-        """Restart agent
-
-        Args:
-            host (str): Hostname
-            systemd (bool, optional): Restart using systemd. Defaults to False.
-        """
-        pass
-
     def get_agents_info(self):
         """Get registered agents information.
 
@@ -510,47 +511,257 @@ class WazuhEnvironmentHandler(HostManager):
         """
         pass
 
+    def restart_agent(self, host):
+        """Restart agent
+
+        Args:
+            host (str): Hostname
+        """
+        self.logger.debug(f'Restarting agent {host}')
+        service_name = WAZUH_ANGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
+        if self.is_agent(host):
+            self.control_service(host, service_name, 'restarted')
+            self.logger.debug(f'Agent {host} restarted successfully')
+        else:
+            raise ValueError(f'Host {host} is not an agent')
+
     def restart_agents(self, agent_list=None, parallel=True):
         """Restart list of agents
 
         Args:
             agent_list (list, optional): Agent list. Defaults to None.
+            parallel (bool, optional): Parallel execution. Defaults to True.
         """
-        pass
+        self.logger.info(f'Restarting agents: {agent_list}')
+        if parallel:
+            agent_restart_tasks = self.pool.map(self.restart_agent, agent_list)
+        else:
+            for agent in agent_list:
+                self.restart_agent(agent)
+        self.logger.info(f'Agents restarted successfully: {agent_list}')
 
     def restart_manager(self, host):
         """Restart manager
 
         Args:
             host (str): Hostname
-            systemd (bool, optional): Use systemd. Defaults to False.
         """
-        pass
+        self.logger.debug(f'Restarting manager {host}')
+        if self.is_manager(host):
+            self.control_service(host, 'wazuh-manager', 'restarted', become=True)
+            self.logger.debug(f'Manager {host} restarted successfully')
+        else:
+            ValueError(f'Host {host} is not a manager')
 
     def restart_managers(self, manager_list, parallel=True):
         """Restart managers
 
         Args:
             manager_list (list): Managers list
+            parallel (bool, optional): Parallel execution. Defaults to True.
         """
-        pass
+        self.logger.info(f'Restarting managers: {manager_list}')
+        if parallel:
+            self.pool.map(self.restart_manager, manager_list)
+        else:
+            for manager in manager_list:
+                self.restart_manager(manager)
+        self.logger.info(f'Managers restarted successfully: {manager_list}')
 
     def stop_agent(self, host):
         """Stop agent
 
         Args:
             host (str): Hostname
-            systemd (bool, optional): Use systemd. Defaults to False.
         """
-        pass
+        self.logger.debug(f'Stopping agent {host}')
+        service_name = WAZUH_ANGENT_WINDOWS_SERVICE_NAME if is_windows(host) else 'wazuh-agent'
+        if self.is_agent(host):
+            self.control_service(host, service_name, 'stopped')
+            self.logger.debug(f'Agent {host} stopped successfully')
+        else:
+            raise ValueError(f'Host {host} is not an agent')
 
     def stop_agents(self, agent_list=None, parallel=True):
         """Stop agents
 
         Args:
             agent_list(list, optional): Agents list. Defaults to None
+            parallel (bool, optional): Parallel execution. Defaults to True.
         """
-        pass
+        self.logger.info(f'Stopping agents: {agent_list}')
+        if parallel:
+            self.pool.map(self.stop_agent, agent_list)
+        else:
+            for agent in agent_list:
+                self.restart_agent(agent)
+        self.logger.info(f'Agents stopped successfully: {agent_list}')
+
+    def stop_manager(self, host):
+        """Stop manager
+
+        Args:
+            host (str): Hostname
+        """
+        self.logger.debug(f'Stopping manager {host}')
+        if self.is_manager(host):
+            self.control_service(host, 'wazuh-manager', 'stopped', become=True)
+            self.logger.debug(f'Manager {host} stopped successfully')
+        else:
+            raise ValueError(f'Host {host} is not a manager')
+
+    def stop_managers(self, manager_list, parallel=True):
+        """Stop managers
+
+        Args:
+            manager_list (list): Managers list
+            parallel (bool, optional): Parallel execution. Defaults to True.
+        """
+        self.logger.info(f'Stopping managers: {manager_list}')
+        if parallel:
+            self.pool.map(self.stop_manager, manager_list)
+        else:
+            for manager in manager_list:
+                self.restart_manager(manager)
+        self.logger.info(f'Stopping managers: {manager_list}')
+
+    def start_agent(self, host):
+        """Start agent
+
+        Args:
+            host (str): Hostname
+        """
+        self.logger.debug(f'Starting agent {host}')
+        service_name = WAZUH_ANGENT_WINDOWS_SERVICE_NAME if is_windows(host) else 'wazuh-agent'
+        if self.is_agent(host):
+            self.control_service(host, service_name, 'started')
+            self.logger.debug(f'Agent {host} started successfully')
+        else:
+            raise ValueError(f'Host {host} is not an agent')
+
+    def start_agents(self, agent_list, parallel=True):
+        """Start agents
+
+        Args:
+            agent_list (list): Agents list
+            parallel (bool, optional): Parallel execution. Defaults to True.
+        """
+        self.logger.info(f'Starting agents: {agent_list}')
+        if parallel:
+            self.pool.map(self.start_agent, agent_list)
+        else:
+            for agent in agent_list:
+                self.start_agent(agent)
+        self.logger.info(f'Agents started successfully: {agent_list}')
+
+    def start_manager(self, host):
+        """Start manager
+
+        Args:
+            host (str): Hostname
+        """
+        self.logger.debug(f'Starting manager {host}')
+        if self.is_manager(host):
+            self.control_service(host, 'wazuh-manager', 'started', become=True)
+            self.logger.debug(f'Manager {host} started successfully')
+        else:
+            raise ValueError(f'Host {host} is not a manager')
+
+    def start_managers(self, manager_list, parallel=True):
+        """Start managers
+
+        Args:
+            manager_list (list): Managers list
+            parallel (bool, optional): Parallel execution. Defaults to True.
+        """
+        self.logger.info(f'Starting managers: {manager_list}')
+        if parallel:
+            self.pool.map(self.start_manager, manager_list)
+        else:
+            for manager in manager_list:
+                self.start_manager(manager)
+        self.logger.info(f'Managers started successfully: {manager_list}')
+
+    def restart_environment(self, parallel=True):
+        """Restart all agents and manager in the environment
+
+        Args:
+            parallel (bool, optional): Parallel execution. Defaults to True.
+        """
+        self.logger.info('Restarting environment')
+        manager_list = self.get_managers()
+        agent_list = self.get_agents()
+
+        if parallel:
+            self.logger.info(message='Restarting environment: Managers')
+            self.pool.map(self.restart_manager, manager_list)
+
+            self.logger.info(message='Restarting environment: Agents')
+            self.pool.map(self.restart_agent, agent_list)
+        else:
+            self.logger.info(message='Restarting environment: Managers')
+            for manager in manager_list:
+                self.restart_manager(manager)
+
+            self.logger.info(message='Restarting environment: Agents')
+            for agent in agent_list:
+                self.restart_agent(agent)
+
+        self.logger.info('Environment restarted successfully')
+
+    def stop_environment(self, parallel=True):
+        """Stop all agents and manager in the environment
+
+        Args:
+            parallel (bool, optional): Parallel execution. Defaults to True.
+        """
+        self.logger.info('Stopping environment')
+        manager_list = self.get_managers()
+        agent_list = self.get_agents()
+
+        if parallel:
+            self.logger.info(message='Stopping environment: Managers')
+            self.pool.map(self.stop_manager, manager_list)
+
+            self.logger.info(message='Stopping environment: Agents')
+            self.pool.map(self.stop_agent, agent_list)
+        else:
+            self.logger.info(message='Stopping environment: Managers')
+            for manager in get_managers():
+                self.stop_manager(manager)
+
+            self.logger.info(message='Stopping environment: Agents')
+            for agent in get_agents():
+                self.stop_agent(agent)
+
+        self.logger.info('Stopping environment')
+
+    def start_environment(self, parallel=True):
+        """Start all agents and manager in the environment
+
+        Args:
+            parallel (bool, optional): Parallel execution. Defaults to True.
+        """
+        self.logger.info('Starting environment')
+        manager_list = self.get_managers()
+        agent_list = self.get_agents()
+
+        if parallel:
+            self.logger.info(message='Starting environment: Managers')
+            self.pool.map(self.start_manager, manager_list)
+
+            self.logger.info(message='Starting environment: Agents')
+            self.pool.map(self.start_agent, agent_list)
+        else:
+            self.logger.info(message='Starting environment: Managers')
+            for manager in get_managers():
+                self.start_manager(manager)
+
+            self.logger.info(message='Starting environment: Agents')
+            for agent in get_agents():
+                self.start_agent(agent)
+
+        self.logger.info('Environment started successfully')
 
     def get_master_node(self):
         """Get master manager hostname
@@ -597,101 +808,6 @@ class WazuhEnvironmentHandler(HostManager):
         """
         pass
 
-    def stop_manager(self, manager):
-        """Stop manager
-
-        Args:
-            host (Hostname): Hostname
-            systemd (bool, optional): Use systemd. Defaults to False.
-        """
-        pass
-
-    def start_agent(self, gent):
-        """Start agent
-
-        Args:
-            host (str): Hostname
-            systemd (bool, optional): Use systemd. Defaults to False.
-        """
-        pass
-
-    def start_agents(self, agent_list, parallel=True):
-        """Start agents
-
-        Args:
-            agent_list (list): Agents list
-        """
-        pass
-
-    def start_manager(self, manager):
-        """Start manager
-
-        Args:
-            host (str): Hostname
-        """
-        pass
-
-    def start_managers(self, manager_list, parallel=True):
-        """Start managers
-
-        Args:
-            manager_list (list): Managers list
-        """
-        pass
-
-    def restart_environment(self, parallel=True):
-        """Restart all agents and manager in the environment
-
-        Args:
-            parallel (bool, optional): Parallel execution. Defaults to True.
-        """
-        pass
-
-    def get_host_ansible_ip(self, host):
-        """Get host used ip by ansible.
-
-        Args:
-            host (str): Hostname
-
-        Returns:
-            str: Host used IP
-        """
-        ansible_ip = self.get_host_variables(host).get('ansible_host', None)
-        return ansible_ip
-
-    def is_windows(self, host):
-        """Check if host is windows
-
-        Args:
-            host (str): Hostname
-
-        Returns:
-            boolean: Host is a windows host
-        """
-        return self.get_host_variables(host)['os_name'] == 'windows'
-
-    def is_linux(self, host):
-        """Check if host is Linux
-
-        Args:
-            host (str): Hostname
-
-        Returns:
-            boolean: Host is a linux host
-        """
-        return self.get_host_variables(host)['os_name'] == 'linux'
-
-    def is_macos(self, host):
-        """Check if host is macos
-
-        Args:
-            host (str): Hostname
-
-        Returns:
-            boolean: Host is a macos host
-        """
-        return self.get_host_variables(host)['os_name'] == 'darwin'
-
     def get_managers(self):
         """Get environment managers names
 
@@ -707,3 +823,23 @@ class WazuhEnvironmentHandler(HostManager):
             List: Agent names list
         """
         return self.get_group_hosts('agent')
+
+    def is_agent(self, host):
+        """Check if host is agent
+
+        Args:
+            host (str): Hostname
+        Returns:
+            bool: True if host is agent
+        """
+        return host in self.get_agents()
+
+    def is_manager(self, host):
+        """Check if host is manager
+
+        Args:
+            host (str): Hostname
+        Returns:
+            bool: True if host is manager
+        """
+        return host in self.get_managers()
