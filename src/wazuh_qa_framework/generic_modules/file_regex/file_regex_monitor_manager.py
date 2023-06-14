@@ -4,12 +4,14 @@ import json
 
 from wazuh_qa_framework.generic_modules.exceptions.exceptions import ValidationError, TimeoutError
 from wazuh_qa_framework.generic_modules.file.file import get_file_encoding
+from wazuh_qa_framework.generic_modules.logging.base_logger import BaseLogger
 
 
 class FileRegexMonitorManager:
 
-    def __init__(self, logging=None):
-        self.logging = logging
+    def __init__(self, debug='info'):
+        self.logger = BaseLogger(name="file_regex_monitor_manager", level=debug, output_color=True,
+                                 output_source=True)
         self.files_position = {}
 
     def start(self, monitoring_data, report_file=None, update_position=True, ignore_errors=False):
@@ -35,6 +37,8 @@ class FileRegexMonitorManager:
         matches_results = []
 
         for monitoring_element in monitoring_data:
+            self.logger.info(f"Monitoring {monitoring_element.get('path')} with {monitoring_element.get('callback')}")
+
             monitoring_file, callback, timeout, error_message = get_monitoring_data_values(monitoring_element)
             encoding = get_file_encoding(monitoring_file)
 
@@ -46,6 +50,7 @@ class FileRegexMonitorManager:
                         self.files_position[monitoring_file] = 0
                     else:
                         _file.seek(self.files_position[monitoring_file])
+                last_monitored_line = None
                 while True:
                     current_position = _file.tell()
                     line = _file.readline()
@@ -55,8 +60,8 @@ class FileRegexMonitorManager:
                         _file.seek(current_position)
                         time.sleep(0.1)
                     # If we have a new line, check if it matches with the callback
-
                     else:
+                        last_monitored_line = line
                         match = callback(line)
                         if match:
                             if match.groups():
@@ -65,6 +70,7 @@ class FileRegexMonitorManager:
                             else:
                                 result = {"file": monitoring_file, "line": line, "found": True}
 
+                            self.logger.info(f"Match found: {line}")
                             matches_results.append(result)
                             self.files_position[monitoring_file] = _file.tell()
                             break
@@ -74,7 +80,8 @@ class FileRegexMonitorManager:
 
                     # Raise timeout error if we have passed the timeout
                     if elapsed_time > timeout:
-                        failed_result = {"file": monitoring_file, "last_monitored_line": line,
+                        self.logger.error(f"Timeout reached for {str(callback)} from {monitoring_file} after")
+                        failed_result = {"file": monitoring_file, "last_monitored_line": last_monitored_line,
                                          "found": False}
                         matches_results.append(failed_result)
                         break
@@ -82,8 +89,8 @@ class FileRegexMonitorManager:
                 if not ignore_errors and matches_results[-1].get("found") is False:
                     break
 
-        if self.report_file is not None:
-            with open(self.report_file, "w") as report_file_handler:
+        if report_file is not None:
+            with open(report_file, "w") as report_file_handler:
                 print(matches_results)
                 json.dump(matches_results, report_file_handler)
 
