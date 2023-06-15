@@ -546,6 +546,63 @@ class HostManager:
 
         return result
 
+    def get_host_ansible_ip(self, host):
+        """Get host used ip by ansible.
+
+        Args:
+            host (str): Hostname
+
+        Returns:
+            str: Host used IP
+        """
+        ansible_ip = self.get_host_variables(host).get('ansible_host', None)
+
+        return ansible_ip
+
+    def is_windows(self, host):
+        """Check if host is windows
+
+        Args:
+            host (str): Hostname
+
+        Returns:
+            boolean: Host is a windows host
+        """
+        return self.get_host_variables(host)['os_name'] == 'windows'
+
+    def is_linux(self, host):
+        """Check if host is Linux
+
+        Args:
+            host (str): Hostname
+
+        Returns:
+            boolean: Host is a linux host
+        """
+        return self.get_host_variables(host)['os_name'] == 'linux'
+
+    def is_macos(self, host):
+        """Check if host is macos
+
+        Args:
+            host (str): Hostname
+
+        Returns:
+            boolean: Host is a macos host
+        """
+        return self.get_host_variables(host)['os_name'] == 'darwin'
+
+    def is_solaris(self, host):
+        """Check if host is solaris
+
+        Args:
+            host (str): Hostname
+
+        Returns:
+            boolean: Host is a solaris host
+        """
+        return self.get_host_variables(host)['os_name'] == 'solaris'
+
     def install_package(self, host, package_name, become=None, ignore_errors=False):
         """Install a package on a host.
 
