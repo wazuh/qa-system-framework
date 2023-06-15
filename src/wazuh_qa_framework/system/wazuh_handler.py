@@ -513,7 +513,7 @@ class WazuhEnvironmentHandler(HostManager):
         Return:
             str: agent_id
         """
-        host_list = WazuhAPI(address = self.get_host_variables(host)['ip']).list_agents()['affected_items']
+        host_list = WazuhAPI(address=self.get_host_variables(host)['ip']).list_agents()['affected_items']
         for host in host_list:
             if host.get('ip') == self.get_host_variables(agent)['ip']:
                 return host.get('id')
@@ -830,7 +830,8 @@ class WazuhEnvironmentHandler(HostManager):
             logs (str): Remove logs (ossec.log, api.log) from agents. Defaults to False.
             restart (str): Restart agents. Defaults to False.
         """
-        if manager is None: manager = 'manager1'
+        if manager is None:
+            manager = 'manager1'
 
         # Getting agent_ids list
         agent_ids = []
@@ -849,15 +850,15 @@ class WazuhEnvironmentHandler(HostManager):
         else:
             self.logger.info(f'Removing agents {agent_list} using API')
             agent_string = ','.join(agent_ids)
-            endpoint=f'/agents?pretty=true&older_than=0s&agents_list={agent_string}&status=all'
+            endpoint = f'/agents?pretty=true&older_than=0s&agents_list={agent_string}&status=all'
             request = WazuhAPIRequest(endpoint=endpoint, method='DELETE')
-            request.send(WazuhAPI(address = self.get_host_variables(manager)['ip']))
+            request.send(WazuhAPI(address=self.get_host_variables(manager)['ip']))
 
         # Remove logs
-        if logs and parallel == False:
+        if logs and not parallel:
             for agent in agent_list:
                 self.clean_logs(agent)
-        if logs and parallel == True:
+        if logs and parallel:
             self.pool.map(self.clean_logs, agent_list)
 
         # Restarting agents
