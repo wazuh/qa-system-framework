@@ -19,6 +19,10 @@ DEFAULT_INSTALL_PATH = {
     'darwin': '/Library/Ossec'
 }
 
+DEFAULT_TEMPORAL_DIRECTORY = {
+    'linux': '/tmp',
+    'windows': 'C:\\Users\\qa\\AppData\Local\Temp'
+}
 
 def configure_local_internal_options(new_conf):
     local_internal_configuration_string = ''
@@ -459,7 +463,8 @@ class WazuhEnvironmentHandler(HostManager):
             self.pool.starmap(self.configure_host, host_configuration_map)
         else:
             for host, configurations in configuration_hosts.items():
-                self.configure_host(host, configurations)
+                for configuration_file, configuration_values in configurations.items():
+                    self.configure_host(host, configuration_file, configuration_values)
         self.logger.info('Environment configured successfully')
 
     def change_agents_configured_manager(self, agent_list, manager, use_manager_name=True):
@@ -470,6 +475,7 @@ class WazuhEnvironmentHandler(HostManager):
             manager (str): Manager name in the environment/Manager or IP.
             use_manager_name (Boolean): Replace manager name with manager IP. Default True
         """
+        self.logger.debug('Changing configured manager')
         if type(agent_list) != list:
             raise TypeError('Expected a list of agents')
 
@@ -485,17 +491,30 @@ class WazuhEnvironmentHandler(HostManager):
             }
 
         self.configure_environment(new_configuration)
+        self.logger.debug('Changed configured manager successfully')
 
-    def backup_host_configuration(self, configuration_list):
-        """Backup specified files in
+    def backup_host_configuration(self, host, file, group=None):
+        """Backup specified files in host
 
         Args:
             configuration_list (dict): Host configuration files to backup
         Returns:
             dict: Host backup filepaths
         """
+        self.logger.debug(f"Creating {file} backup on {host}")
+        backup_paths = {host: {}}
+        host_configuration_file_path = self.get_file_fullpath(host, file, group)
+        temporal_folder = DEFAULT_TEMPORAL_DIRECTORY[self.get_ansible_host_os(host)]
+        backup_file = os.path.join(temporal_folder, file + '.backup',)
+        backup_paths[host][host_configuration_file_path] = backup_file
 
-    def backup_environment_configuration(self, configuration_list, parallel=True):
+        self.copy_file(host, host_configuration_file_path, backup_file, remote_src=True,
+                       become=not self.is_windows(host))
+
+        self.logger.debug(f"Created {file} backup on {host} successfully")
+        return backup_paths
+
+    def backup_environment_configuration(self, configuration_hosts, parallel=True):
         """Backup specified files in all hosts
 
         Args:
@@ -503,23 +522,63 @@ class WazuhEnvironmentHandler(HostManager):
         Returns:
             dict: Host backup filepaths
         """
-        pass
+        self.logger.info('Creating backup')
+        backup_configuration = []
+        if parallel:
+            host_configuration_map = []
+            for host, configuration in configuration_hosts.items():
+                for file in configuration['files']:
+                    group = configuration['group'] if file == 'agent.conf' else None
+                    host_configuration_map.append((host, file, group))
+            backup_configuration = self.pool.starmap(self.backup_host_configuration, host_configuration_map)
 
-    def restore_host_backup_configuration(self, backup_configuration):
+        else:
+            for host, configuration in configuration_hosts.items():
+                for file in configuration['files']:
+                    group = configuration['group'] if file == 'agent.conf' else None
+                    backup_map = (self.backup_host_configuration(host, file, group))
+                    backup_configuration.append(backup_map)
+
+        final_backup_configuration = {}
+        for backup_conf_host in backup_configuration:
+            for host, file in backup_conf_host.items():
+                if host in final_backup_configuration:
+                    final_backup_configuration[host].update(file)
+                else:
+                    final_backup_configuration[host] = file
+
+        self.logger.info('Created backup successfully')
+        return final_backup_configuration
+
+    def restore_host_backup_configuration(self, host, dest_file, backup_file):
         """Restore backup configuration
 
         Args:
             backup_configuration (dict): Backup configuration filepaths
         """
-        pass
+        self.logger.debug(f"Restoring {dest_file} backup on {host}")
+        self.copy_file(host=host, dest_path=dest_file,
+                       src_path=backup_file, remote_src=True, become=not self.is_windows(host))
+        self.logger.debug(f"Restored {dest_file} backup on {host} succesfully")
 
-    def restore_environment_backup_configuration(self, backup_configuration, parallel=True):
+    def restore_environment_backup_configuration(self, backup_configurations, parallel=False):
         """Restore environment backup configuration
 
         Args:
             backup_configuration (dict): Backup configuration filepaths
         """
-        pass
+        self.logger.info('Restoring backup')
+        if parallel:
+            host_configuration_map = []
+            for host, files in backup_configurations.items():
+                for dest_file, backup_file in files.items():
+                    host_configuration_map.append((host, dest_file, backup_file))
+            self.pool.starmap(self.restore_host_backup_configuration, host_configuration_map)
+        else:
+            for host, files in backup_configurations.items():
+                for dest_file, backup_file in files.items():
+                    self.restore_host_backup_configuration(host, dest_file, backup_file)
+        self.logger.info('Restored backup successfully')
 
     def log_search(self, host, pattern, timeout, file, escape=False, output_file='log_search_output.json'):
         """Search log in specified host file
