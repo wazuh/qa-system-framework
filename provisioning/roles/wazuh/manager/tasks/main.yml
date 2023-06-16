@@ -1,0 +1,27 @@
+---
+
+- name: Include vars/repo_vars.yml
+  include_vars: ../../vars/repo_vars.yml
+
+- name: Include vars/repo.yml
+  include_vars: ../../vars/repo.yml
+  when: packages_repository == 'production'
+
+- name: Include vars/repo_pre-release.yml
+  include_vars: ../../vars/repo_pre-release.yml
+  when: packages_repository == 'pre-release'
+
+- name: Include vars/repo_staging.yml
+  include_vars: ../../vars/repo_staging.yml
+  when: packages_repository == 'staging'
+
+- name: Include tasks based on OS
+  include_tasks: "{{ ansible_os_family }}.yml"
+
+- name: Ensure Wazuh Manager service is started and enabled.
+  service:
+    name: "wazuh-manager"
+    enabled: true
+    state: started
+  tags:
+    - config
