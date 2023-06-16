@@ -14,13 +14,13 @@ from wazuh_qa_framework.system.host_manager import HostManager
 
 DEFAULT_INSTALL_PATH = {
     'linux': '/var/ossec',
-    'windows': 'C:\\Program Files\\ossec-agent',
+    'windows': 'C:/Program Files (x86)/ossec-agent',
     'darwin': '/Library/Ossec'
 }
 
 DEFAULT_TEMPORAL_DIRECTORY = {
     'linux': '/tmp',
-    'windows': 'C:\\Users\\qa\\AppData\Local\Temp'
+    'windows': 'C:/Users/qa/AppData/Local/Temp'
 }
 
 
@@ -561,7 +561,7 @@ class WazuhEnvironmentHandler(HostManager):
                        src_path=backup_file, remote_src=True, become=not self.is_windows(host))
         self.logger.debug(f"Restored {dest_file} backup on {host} succesfully")
 
-    def restore_environment_backup_configuration(self, backup_configurations, parallel=False):
+    def restore_environment_backup_configuration(self, backup_configurations, parallel=True):
         """Restore environment backup configuration
 
         Args:
