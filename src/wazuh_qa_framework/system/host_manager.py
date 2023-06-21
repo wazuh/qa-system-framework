@@ -730,4 +730,4 @@ class HostManager:
         except Exception as e:
             raise Exception(f"Run playbook fails due to an unexpected error: {e}")
 
-        return runner.rc == 0
+        return runner
