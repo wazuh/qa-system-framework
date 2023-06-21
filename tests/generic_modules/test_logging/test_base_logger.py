@@ -13,6 +13,7 @@ Test cases:
 
 import pytest
 import os
+import re
 
 from tempfile import gettempdir
 from wazuh_qa_framework.generic_modules.logging.base_logger import BaseLogger
@@ -60,9 +61,14 @@ def test_levels(level, create_destroy_sample_file, expected_lines):
     assert expected_lines == lines_number
 
 
-@pytest.mark.parametrize('color, message, expected_message', [(True, 'hello', 'INFO — \x1b[94mhello\x1b[0m'),
-                                                              (False, 'hello', 'INFO — hello')])
-def test_output_color(color, message, expected_message, create_destroy_sample_file):
+@pytest.mark.parametrize('source, color, message, expected_message', [(False, True, 'hello',
+                                                                       'INFO - \\x1b[94mhello\\x1b[0m'),
+                                                                      (True, False, 'hello',
+                                                                       'INFO - hello[test_output_color'),
+                                                                      (False, False, 'hello', 'INFO - hello'),
+                                                                      (True, True, 'hello',
+                                                                      'INFO - \\x1b[94mhello[test_output_color')])
+def test_output_color(source, color, message, expected_message, create_destroy_sample_file):
     """Check if the output is colorized when set.
 
     case: Check if the messages are colorized according to output_color logger parameter.
@@ -78,16 +84,20 @@ def test_output_color(color, message, expected_message, create_destroy_sample_fi
             - Remove the create file in the setup phase.
 
     parameters:
-        - color (int): Parametrized variable.
-        - message (int): Parametrized variable.
-        - expected_message (int): Parametrized variable.
+        - source (boolean): Parametrized variable.
+        - color (boolean): Parametrized variable.
+        - message (str): Parametrized variable.
+        - expected_message (str): Parametrized variable.
         - create_destroy_sample_file (fixture): Create an empty file and remove it after finishing.
     """
-    logger = BaseLogger(name='test', level='info', output_color=color, handlers=['file'], logging_file=SAMPLE_FILE)
+    logger = BaseLogger(name='test', level='info', output_color=color, handlers=['file'], logging_file=SAMPLE_FILE,
+                        output_source=source)
 
     # Log a line and check the log file content
     logger.info(message)
-    log_data = read_file(SAMPLE_FILE).strip()
+    log_data = (read_file(SAMPLE_FILE).strip())
 
     # Check if the log content has the color marks.
-    assert expected_message in log_data
+    pattern = re.escape(expected_message)
+
+    assert re.findall(pattern, repr(log_data))
