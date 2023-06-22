@@ -769,7 +769,22 @@ class WazuhEnvironmentHandler(HostManager):
         Returns:
             str: Manager master node
         """
-        pass
+        for manager in self.get_managers():
+            if self.get_host_variables(manager)['type'] == 'master':
+                master_node = manager
+        return master_node
+
+    def get_worker_nodes(self):
+        """Get worker managers' hostnames
+
+        Returns:
+            list: Manager worker nodes
+        """
+        worker_nodes = []
+        for manager in self.get_managers():
+            if self.get_host_variables(manager)['type'] == 'worker':
+                worker_nodes.append(manager)
+        return worker_nodes
 
     def get_api_details(self):
         """Get api details
