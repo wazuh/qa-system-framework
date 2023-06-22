@@ -113,6 +113,26 @@ class WazuhAPI:
         """
         return response.data
 
+    @WazuhAPIRequest(method='GET', endpoint='/agents?status=active')
+    def get_active_agents(self, response):
+        """Get active agents.
+
+        Returns:
+            dict: Wazuh API info.
+        """
+
+        return response.data
+
+    def get_agents_in_manager(self, manager):
+        """Get agents reporting to a specific manager.
+
+        Returns:
+            dict: Wazuh API info.
+        """
+        response = WazuhAPIRequest(method='GET', endpoint=f"/agents/?select=id,name&q=manager={manager}").send(self)
+
+        return response
+
     def restart_agent(self, agent_id):
         """Restart a wazuh-agent.
 
@@ -120,5 +140,35 @@ class WazuhAPI:
             dict: Wazuh API info.
         """
         response = WazuhAPIRequest(method='PUT', endpoint=f"/agents/{agent_id}/restart").send(self)
+
+        return response
+
+    def delete_agents(self, agents_list): ## Need test
+        """Delete agents.
+
+        Returns:
+            dict: Wazuh API info.
+        """
+        response = WazuhAPIRequest(method='DELETE', endpoint=f"/agents?agents_list={agents_list}").send(self)
+
+        return response
+
+    def create_group(self, group_id):
+        """Create group.
+
+        Returns:
+            dict: Wazuh API info.
+        """
+        response = WazuhAPIRequest(method='POST', endpoint='/groups', payload={'group_id': group_id}).send(self)
+
+        return response
+
+    def delete_groups(self, groups_list):
+        """Delete group.
+
+        Returns:
+            dict: Wazuh API info.
+        """
+        response = WazuhAPIRequest(method='DELETE', endpoint=f"/groups?groups_list={groups_list}").send(self)
 
         return response

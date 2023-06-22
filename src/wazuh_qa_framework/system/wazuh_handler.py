@@ -9,6 +9,7 @@ from multiprocessing.pool import ThreadPool
 from wazuh_qa_framework.generic_modules.logging.base_logger import BaseLogger
 from wazuh_qa_framework.global_variables.daemons import WAZUH_ANGENT_WINDOWS_SERVICE_NAME
 from wazuh_qa_framework.system.host_manager import HostManager
+from wazuh_qa_framework.wazuh_components.api.wazuh_api import WazuhAPI
 
 
 DEFAULT_INSTALL_PATH = {
@@ -151,6 +152,8 @@ class WazuhEnvironmentHandler(HostManager):
         logger_level = 'debug' if debug else 'info'
         logger_formatter = 'verbose' if debug else 'basic'
         self.logger = BaseLogger('WazuhEnvironment', level=logger_level, output_source=True)
+
+        self.wazuh_api = WazuhAPI(address=self.get_host_ansible_ip(self.get_master_node()))
 
     def get_file_fullpath(self, host, filename, group=None):
         """Get the path of common configuration and log file in the specified host.
