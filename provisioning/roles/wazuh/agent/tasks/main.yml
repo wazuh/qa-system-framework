@@ -1,0 +1,45 @@
+---
+
+- include_vars: ../../vars/repo_vars.yml
+
+- include_vars: ../../vars/repo.yml
+  when: packages_repository == 'production'
+
+- include_vars: ../../vars/repo_pre-release.yml
+  when: packages_repository == 'pre-release'
+
+- include_vars: ../../vars/repo_staging.yml
+  when: packages_repository == 'staging'
+
+- include_tasks: "Windows.yml"
+  when: ansible_os_family == "Windows"
+
+- include_tasks: "Linux.yml"
+  when: ansible_system == "Linux"
+
+- include_tasks: "MacOS.yml"
+  when: ansible_system == "Darwin"
+
+- include_tasks: "Solaris.yml"
+  when: ansible_os_family == "Solaris"
+
+- block:
+  - name: Add the manager's IP to the agent's ossec.conf
+    become: true
+    replace:
+      path: "{{ agent_conf_path }}"
+      regexp: '<address>.*</address>'
+      replace: "<address>{{ manager_ip }}</address>"
+    notify: start service
+    when: ansible_os_family != "Windows"
+
+  - name: Add the manager's IP to the winagent's ossec.conf
+    community.windows.win_lineinfile:
+      path: "{{ agent_conf_path }}"
+      regex: '<address>.*</address>'
+      line: "<address>{{ manager_ip }}</address>"
+    notify: start WazuhSvc
+    when: ansible_os_family == "Windows"
+
+- name: run the handlers after the installation
+  meta: flush_handlers

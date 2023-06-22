@@ -1,0 +1,46 @@
+---
+- name: RedHat/CentOS 5 | Install Wazuh repo
+  yum_repository:
+    name: wazuh_repo
+    description: Wazuh repository
+    baseurl: "{{ wazuh_repo.yum }}5/"
+    gpgkey: "{{ wazuh_repo.gpg }}-5"
+    gpgcheck: true
+  changed_when: false
+  when:
+    - (ansible_facts['os_family']|lower == 'redhat') and (ansible_distribution|lower != 'amazon')
+    - (ansible_distribution_major_version|int <= 5)
+    - not wazuh_custom_packages_installation_agent_enabled
+  register: repo_v5_installed
+
+- name: RedHat/CentOS/Fedora | Install Wazuh repo
+  become: true
+  yum_repository:
+    name: wazuh_repo
+    description: Wazuh repository
+    baseurl: "{{ wazuh_repo.yum }}"
+    gpgkey: "{{ wazuh_repo.gpg }}"
+    gpgcheck: true
+  changed_when: false
+  when:
+    - repo_v5_installed is skipped
+    - not wazuh_custom_packages_installation_agent_enabled
+
+- name: Linux CentOS/RedHat | Install wazuh-agent
+  become: true
+  yum:
+    name: wazuh-agent-{{ wazuh_agent_version }}
+    state: present
+    lock_timeout: '{{ wazuh_agent_yum_lock_timeout }}'
+  when:
+    - ansible_os_family|lower == "redhat"
+    - not wazuh_custom_packages_installation_agent_enabled
+  tags:
+    - init
+
+- name: Remove Wazuh repository (and clean up left-over metadata)
+  become: true
+  yum_repository:
+    name: wazuh_repo
+    state: absent
+  changed_when: false

@@ -1,0 +1,7 @@
+---
+- name: Include tasks based on OS
+  include_tasks: "{{ ansible_os_family }}.yml"
+
+- include_tasks: "installation_from_custom_packages.yml"
+  when:
+    - wazuh_custom_packages_installation_agent_enabled
