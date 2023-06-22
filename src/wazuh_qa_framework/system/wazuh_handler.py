@@ -786,6 +786,17 @@ class WazuhEnvironmentHandler(HostManager):
                 worker_nodes.append(manager)
         return worker_nodes
 
+    def get_node_type(self, host):
+        """Get manager type
+
+        Returns:
+            str: Manager node type
+        """
+        if self.is_manager(host):
+            return 'master' if host == self.get_master_node() else 'worker'
+        else:
+            raise ValueError(f'Host {host} is not a manager')
+
     def get_api_details(self):
         """Get api details
 
