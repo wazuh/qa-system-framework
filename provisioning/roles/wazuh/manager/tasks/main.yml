@@ -18,10 +18,3 @@
 - name: Include tasks based on OS
   include_tasks: "{{ ansible_os_family }}.yml"
 
-- name: Ensure Wazuh Manager service is started and enabled.
-  service:
-    name: "wazuh-manager"
-    enabled: true
-    state: started
-  tags:
-    - config

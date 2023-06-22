@@ -43,16 +43,15 @@
 
 - block:
   - name: Install Wazuh Manager from .rpm packages | yum
-    become: true
     yum:
       name: "{{ wazuh_custom_packages_installation_manager_rpm_url }}"
       state: present
+    notify: start service
     when:
       - not (ansible_distribution|lower == "centos" and ansible_distribution_major_version >= "8")
       - not (ansible_distribution|lower == "redhat" and ansible_distribution_major_version >= "8")
 
   - name: Install Wazuh Manager from .rpm packages | dnf
-    become: true
     dnf:
       name: "{{ wazuh_custom_packages_installation_manager_rpm_url }}"
       state: present
