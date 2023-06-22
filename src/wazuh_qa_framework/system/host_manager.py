@@ -717,7 +717,7 @@ class HostManager:
         testinfra_host = self.get_host(host)
         ansible_command = 'script'
 
-        if self.get_host_variables(host)['os_name'] == 'windows':
+        if self.is_windows(host):
             ansible_arguments = f"'{script} executable=python'"
             result = testinfra_host.ansible(ansible_command, ansible_arguments, check=False)
         else:
