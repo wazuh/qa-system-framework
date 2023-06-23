@@ -1,0 +1,9 @@
+---
+- name: start WazuhSvc
+  win_service: name=WazuhSvc start_mode=auto state=started
+  when: ansible_os_family == "Windows"
+
+- name: start service
+  become: true
+  command: '"{{ wazuh_path }}"/bin/wazuh-control start'
+  when: ansible_os_family != "Windows"

@@ -1,0 +1,4 @@
+---
+- hosts: agent
+  roles:
+    - ../roles/wazuh/agent

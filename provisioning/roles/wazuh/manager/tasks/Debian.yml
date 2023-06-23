@@ -1,0 +1,60 @@
+---
+- name: Debian/Ubuntu | Install gnupg, apt-transport-https
+  apt:
+    name:
+      - gnupg
+      - apt-transport-https
+    state: present
+    cache_valid_time: 3600
+    install_recommends: false
+  register: wazuh_manager_https_packages_installed
+  until: wazuh_manager_https_packages_installed is succeeded
+
+- name: Debian/Ubuntu | Installing Wazuh repository key (Ubuntu 14)
+  shell: |
+    set -o pipefail
+    curl -s {{ wazuh_repo.gpg }} | apt-key add -
+  args:
+    warn: false
+    executable: /bin/bash
+  changed_when: false
+  when:
+    - ansible_distribution == "Ubuntu"
+    - ansible_distribution_major_version | int == 14
+    - not wazuh_custom_packages_installation_manager_enabled
+
+- name: Debian/Ubuntu | Installing Wazuh repository key
+  apt_key:
+    url: "{{ wazuh_repo.gpg }}"
+    id: "{{ wazuh_repo.key_id }}"
+  when:
+    - not (ansible_distribution == "Ubuntu" and ansible_distribution_major_version | int == 14)
+    - not wazuh_custom_packages_installation_manager_enabled
+
+- name: Debian/Ubuntu | Add Wazuh repositories
+  apt_repository:
+    filename: wazuh_repo
+    repo: "{{ wazuh_repo.apt }}"
+    state: present
+    update_cache: true
+  changed_when: false
+  when:
+    - not wazuh_custom_packages_installation_manager_enabled
+
+- name: Debian/Ubuntu | Install wazuh-manager
+  apt:
+    name: "wazuh-manager={{ wazuh_manager_version }}-*"
+    state: present
+  notify: start service
+  when: not wazuh_custom_packages_installation_manager_enabled
+
+- name: Install Wazuh Manager from .deb packages
+  apt:
+    deb: "{{ wazuh_custom_packages_installation_manager_deb_url }}"
+    state: present
+  notify: start service
+  when:
+    - wazuh_custom_packages_installation_manager_enabled
+
+- name: run the handlers after the installation
+  meta: flush_handlers

@@ -1,0 +1,21 @@
+---
+wazuh_agent_version: "{{ packages_version | default(agent_production_version) }}"
+wazuh_path: "{{ ('/var/ossec' if (ansible_os_family != 'Windows' and ansible_os_family != 'Darwin')) or (wazuh_winagent_config.install_dir if (ansible_os_family == 'Windows')) or ('/Library/Ossec' if (ansible_os_family == 'Darwin')) }}"
+agent_conf_path: "{{ ('/var/ossec/etc/ossec.conf' if (ansible_os_family != 'Windows' and ansible_os_family != 'Darwin')) or (wazuh_winagent_config.conf_path if (ansible_os_family == 'Windows')) or ('/Library/Ossec/etc/ossec.conf' if (ansible_os_family == 'Darwin')) }}"
+
+# Custom packages installation
+wazuh_custom_packages_installation_agent_enabled: false
+
+# Win configuration
+wazuh_winagent_config:
+  download_dir: C:\
+  install_dir: C:\Program Files\ossec-agent\
+  install_dir_x86: C:\Program Files (x86)\ossec-agent\
+  conf_path: C:\Program Files (x86)\ossec-agent\ossec.conf
+  auth_path: C:\Program Files\ossec-agent\agent-auth.exe
+  # Adding quotes to auth_path_x86 since win_shell outputs error otherwise
+  auth_path_x86: C:\'Program Files (x86)'\ossec-agent\agent-auth.exe
+
+wazuh_winagent_config_url: "{{ wazuh_custom_packages_installation_agent_msi_url | default(wazuh_winagent_repo_pkg_url) }}"
+wazuh_winagent_package_name: "{{ wazuh_winagent_package_name_generic | default(wazuh_winagent_repo_pkg_name)}}"
+wazuh_winagent_package_name_generic: wazuh-agent.msi

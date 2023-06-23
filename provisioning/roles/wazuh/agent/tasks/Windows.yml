@@ -1,0 +1,34 @@
+---
+- name: Windows | Check if Program Files (x86) exists
+  win_stat:
+    path: C:\Program Files (x86)
+  register: check_path
+
+- name: Windows | Set Win Path (x86)
+  set_fact:
+    wazuh_agent_win_path: "{{ wazuh_winagent_config.install_dir_x86 }}"
+    wazuh_agent_win_auth_path: "{{ wazuh_winagent_config.auth_path_x86 }}"
+  when:
+    - check_path.stat.exists
+
+- name: Windows | Set Win Path (x64)
+  set_fact:
+    wazuh_agent_win_path: "{{ wazuh_winagent_config.install_dir }}"
+    wazuh_agent_win_auth_path: "{{ wazuh_winagent_config.auth_path }}"
+  when:
+    - not check_path.stat.exists
+
+- name: Windows | Download Wazuh Agent package
+  win_get_url:
+    url: "{{ wazuh_winagent_config_url }}"
+    dest: "{{ wazuh_winagent_config.download_dir }}{{ wazuh_winagent_package_name }}"
+
+- name: Windows | Install Agent if not already installed
+  win_package:
+    path: "{{ wazuh_winagent_config.download_dir }}{{ wazuh_winagent_package_name }}"
+    state: present
+
+- name: Windows | Delete downloaded Wazuh agent installer file
+  win_file:
+    path: "{{ wazuh_winagent_config.download_dir }}{{ wazuh_winagent_package_name }}"
+    state: absent

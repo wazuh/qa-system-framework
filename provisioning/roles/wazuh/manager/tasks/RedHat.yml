@@ -1,0 +1,67 @@
+---
+- name: RedHat/CentOS 5 | Install Wazuh repo
+  become: true
+  yum_repository:
+    name: wazuh_repo
+    description: Wazuh repository
+    baseurl: "{{ wazuh_repo.yum }}5/"
+    gpgkey: "{{ wazuh_repo.gpg }}-5"
+    gpgcheck: true
+  changed_when: false
+  when:
+    - (ansible_os_family|lower == 'redhat') and (ansible_distribution|lower != 'amazon')
+    - (ansible_distribution_major_version|int <= 5)
+    - not wazuh_custom_packages_installation_manager_enabled
+  register: repo_v5_manager_installed
+
+- name: RedHat/CentOS/Fedora | Install Wazuh repo
+  become: true
+  yum_repository:
+    name: wazuh_repo
+    description: Wazuh repository
+    baseurl: "{{ wazuh_repo.yum }}"
+    gpgkey: "{{ wazuh_repo.gpg }}"
+    gpgcheck: true
+  changed_when: false
+  when:
+    - repo_v5_manager_installed is skipped
+    - not wazuh_custom_packages_installation_manager_enabled
+
+- name: CentOS/RedHat/Amazon | Install wazuh-manager
+  become: true
+  package:
+    name: "wazuh-manager-{{ wazuh_manager_version }}"
+    state: present
+  register: wazuh_manager_main_packages_installed
+  until: wazuh_manager_main_packages_installed is succeeded
+  when:
+    - ansible_os_family|lower == "redhat"
+    - not wazuh_custom_packages_installation_manager_enabled
+  notify: start service
+  tags:
+    - init
+
+- block:
+  - name: Install Wazuh Manager from .rpm packages | yum
+    yum:
+      name: "{{ wazuh_custom_packages_installation_manager_rpm_url }}"
+      state: present
+    notify: start service
+    when:
+      - not (ansible_distribution|lower == "centos" and ansible_distribution_major_version >= "8")
+      - not (ansible_distribution|lower == "redhat" and ansible_distribution_major_version >= "8")
+
+  - name: Install Wazuh Manager from .rpm packages | dnf
+    dnf:
+      name: "{{ wazuh_custom_packages_installation_manager_rpm_url }}"
+      state: present
+      disable_gpg_check: True
+    when:
+      - (ansible_distribution|lower == "centos" and ansible_distribution_major_version >= "8") or
+        (ansible_distribution|lower == "redhat" and ansible_distribution_major_version >= "8")
+  notify: start service
+  when:
+    - wazuh_custom_packages_installation_manager_enabled
+
+- name: run the handlers after the installation
+  meta: flush_handlers
