@@ -113,6 +113,17 @@ class WazuhAPI:
         """
         return response.data
 
+    @WazuhAPIRequest(method='GET', endpoint='/agents')
+    def get_agent_id(self, response, host_ip):
+        """Get agent ID.
+
+        Returns:
+            str: Agent ID.
+        """
+        for agent in response.data['affected_items']:
+            if host_ip in agent['ip']:
+                return agent['id']
+
     @WazuhAPIRequest(method='GET', endpoint='/agents?status=active')
     def get_active_agents(self, response):
         """Get active agents.
@@ -271,7 +282,7 @@ class WazuhAPI:
         """Get the ID of a specified user.
 
         Returns:
-            dict: Wazuh API info.
+            str: User ID.
         """
         for user in response.data['affected_items']:
             if user['username'] == username:
@@ -306,7 +317,7 @@ class WazuhAPI:
         """Get the ID of a specified role.
 
         Returns:
-            dict: Wazuh API info.
+            str: Role ID.
         """
         for role in response.data['affected_items']:
             if role['name'] == role:
@@ -341,7 +352,7 @@ class WazuhAPI:
         """Get the ID of a specified policy.
 
         Returns:
-            dict: Wazuh API info.
+            str: Policy ID.
         """
         for policy in response.data['affected_items']:
             if policy['name'] == policy_name:

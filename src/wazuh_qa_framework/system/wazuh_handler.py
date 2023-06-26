@@ -504,26 +504,30 @@ class WazuhEnvironmentHandler(HostManager):
         Returns:
             dict: Agent information
         """
-        pass
+        return self.wazuh_api.list_agents()
 
-    def get_agents_id(self, agents_list=None):
-        """Get agents id
+    def get_agents_id(self, host):
+        """Get agents ID
 
         Returns:
-            List: Agents id list
+            str: Agent ID
         """
-        pass
+        return self.wazuh_api.get_agent_id(host_ip=self.get_host_ansible_ip(host))
 
-    def restart_agent(self, host):
+    def restart_agent(self, host, method='service'):
         """Restart agent
 
         Args:
             host (str): Hostname
+            method (str):
         """
         self.logger.debug(f'Restarting agent {host}')
         service_name = WAZUH_ANGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
         if self.is_agent(host):
-            self.control_service(host, service_name, 'restarted')
+            if method == 'service':
+                self.control_service(host, service_name, 'restarted')
+            elif method == 'api':
+                self.wazuh_api.restart_agent(self.get_agents_id(host))
             self.logger.debug(f'Agent {host} restarted successfully')
         else:
             raise ValueError(f'Host {host} is not an agent')
