@@ -479,3 +479,91 @@ class WazuhAPI:
         """
 
         return response.data
+
+    @WazuhAPIRequest(method='GET', endpoint='/security/config')
+    def get_security_config(self, response):
+        """Get the security configuration.
+
+        Returns:
+            dict: Wazuh API info.
+        """
+
+        return response.data
+
+    def modify_security_config(self, rbac_mode, auth_token_exp_timeout=900):
+        """Modify the security configuration.
+
+        Args:
+            rbac_mode (str): RBAC mode (white/black).
+            auth_token_exp_timeout (int): Time in seconds until the token expires.
+        Returns:
+            dict: Wazuh API info.
+        """
+
+        response = WazuhAPIRequest(method='PUT', endpoint='/security/config',
+                                   payload={'auth_token_exp_timeout': auth_token_exp_timeout,
+                                            'rbac_mode': rbac_mode}).send(self)
+
+        return response
+
+    def add_role_to_user(self, user_id, role_ids):
+        """Set role to user.
+
+        Args:
+            user_id (str): User ID.
+            role_ids (str): List of role IDs.
+        Returns:
+            dict: Wazuh API info.
+        """
+
+        response = WazuhAPIRequest(method='POST',
+                                   endpoint=f"/security/users/{user_id}/roles?role_ids={role_ids}").send(self)
+
+        return response
+
+    def modify_policy(self, policy_id, name, policy):
+        """Modify a policy.
+
+        Args:
+            policy_id (str): Policy ID.
+            name (str): Policy name.
+            policy (dict): New policy definition.
+        Returns:
+            dict: Wazuh API info.
+        """
+
+        response = WazuhAPIRequest(method='PUT', endpoint=f"/security/policies/{policy_id}",
+                                   payload={'name': name, 'policy': policy}).send(self)
+
+        return response
+
+    def modify_role(self, role_id, name):
+        """Modify a role.
+
+        Args:
+            role_id (str): Role ID.
+            name (str): Role name.
+        Returns:
+            dict: Wazuh API info.
+        """
+
+        response = WazuhAPIRequest(method='PUT', endpoint=f"/security/policies/{role_id}",
+                                   payload={'name': name}).send(self)
+
+        return response
+
+    def modify_security_rule(self, rule_id, name, rule):
+        """Modify a security_rule.
+
+        Args:
+            rule_id (str): Rule ID.
+            name (str): Rule name.
+            rule (dict): New rule definition.
+        Returns:
+            dict: Wazuh API info.
+        """
+
+        response = WazuhAPIRequest(method='PUT', endpoint=f"/security/rules/{rule_id}",
+                                   payload={'name': name, 'rule': rule}).send(self)
+
+        return response
