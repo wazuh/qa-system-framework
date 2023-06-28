@@ -775,7 +775,7 @@ class WazuhEnvironmentHandler(HostManager):
                 self.start_manager(manager)
 
             self.logger.info(message='Starting environment: Agents')
-            for agent in agent_list :
+            for agent in agent_list:
                 self.start_agent(agent)
 
         self.logger.info('Environment started successfully')
