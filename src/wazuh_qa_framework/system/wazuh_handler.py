@@ -9,7 +9,8 @@ from multiprocessing.pool import ThreadPool
 from wazuh_qa_framework.generic_modules.logging.base_logger import BaseLogger
 from wazuh_qa_framework.global_variables.daemons import WAZUH_ANGENT_WINDOWS_SERVICE_NAME
 from wazuh_qa_framework.system.host_manager import HostManager
-
+from wazuh_qa_framework.wazuh_components.api.wazuh_api import WazuhAPI
+from wazuh_qa_framework.wazuh_components.api.wazuh_api_request import WazuhAPIRequest
 
 DEFAULT_INSTALL_PATH = {
     'linux': '/var/ossec',
@@ -575,7 +576,7 @@ class WazuhEnvironmentHandler(HostManager):
             host (str): Hostname
         """
         self.logger.debug(f'Stopping agent {host}')
-        service_name = WAZUH_ANGENT_WINDOWS_SERVICE_NAME if is_windows(host) else 'wazuh-agent'
+        service_name = WAZUH_ANGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
         if self.is_agent(host):
             self.control_service(host, service_name, 'stopped')
             self.logger.debug(f'Agent {host} stopped successfully')
@@ -632,7 +633,7 @@ class WazuhEnvironmentHandler(HostManager):
             host (str): Hostname
         """
         self.logger.debug(f'Starting agent {host}')
-        service_name = WAZUH_ANGENT_WINDOWS_SERVICE_NAME if is_windows(host) else 'wazuh-agent'
+        service_name = WAZUH_ANGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
         if self.is_agent(host):
             self.control_service(host, service_name, 'started')
             self.logger.debug(f'Agent {host} started successfully')
@@ -727,11 +728,11 @@ class WazuhEnvironmentHandler(HostManager):
             self.pool.map(self.stop_agent, agent_list)
         else:
             self.logger.info(message='Stopping environment: Managers')
-            for manager in get_managers():
+            for manager in manager_list:
                 self.stop_manager(manager)
 
             self.logger.info(message='Stopping environment: Agents')
-            for agent in get_agents():
+            for agent in agent_list:
                 self.stop_agent(agent)
 
         self.logger.info('Stopping environment')
@@ -754,11 +755,11 @@ class WazuhEnvironmentHandler(HostManager):
             self.pool.map(self.start_agent, agent_list)
         else:
             self.logger.info(message='Starting environment: Managers')
-            for manager in get_managers():
+            for manager in manager_list:
                 self.start_manager(manager)
 
             self.logger.info(message='Starting environment: Agents')
-            for agent in get_agents():
+            for agent in agent_list:
                 self.start_agent(agent)
 
         self.logger.info('Environment started successfully')
@@ -843,3 +844,104 @@ class WazuhEnvironmentHandler(HostManager):
             bool: True if host is manager
         """
         return host in self.get_managers()
+
+    def create_group(self, group_name):
+        """Function to create a group.
+        Args:
+            group_name (str): Name of the group.
+        """
+        self.logger.info(f'creating group {group_name}')
+        self.run_command('manager1', f"/var/ossec/bin/agent_groups -q -a -g {group_name}", become=True)
+
+    def delete_group(self, id_group, method='cmd'):
+        """Function to delete a group.
+        Args:
+            id_group (str): Name of the group from which the id will be obtained.
+            method (str): Method to be used to delete the group. Default: cmd.
+        """
+        if method == 'cmd':
+            self.logger.info(f'Removing group {id_group} using CMD')
+            self.run_command('manager1', f"/var/ossec/bin/agent_groups -q -r -g {id_group}", become=True)
+
+        if method == 'api':
+            self.logger.info(f'Removing group {id_group} using API')
+            endpoint = f'/groups?groups_list={id_group}'
+            request = WazuhAPIRequest(endpoint=endpoint, method='DELETE')
+            request.send(WazuhAPI(address=self.get_host_variables('manager1')['ip']))
+
+        if method == 'folder':
+            self.logger.info(f'Removing group {id_group} deleting folder')
+            self.run_command('manager1', f"rm -rf /var/ossec/etc/shared/{id_group}", become=True)
+
+    def assign_agent_group(self, id_agent, id_group, method='cmd'):
+        """Function to assign an agent to a group.
+        Args:
+            id_agent (str): Name of the agent.
+            id_group (str): Name of the group.
+            method (str): Method to be used to delete the group. Default: cmd.
+        """
+        if method == 'cmd':
+            self.logger.info(f'Assign agent {id_agent} to group {id_group} using CMD')
+            self.run_command('manager1', f"/var/ossec/bin/agent_groups -q -a -i {id_agent} -g {id_group}", become=True)
+
+        if method == 'api':
+            self.logger.info(f'Assign agent {id_agent} to group {id_group} using API')
+            endpoint = f'/agents/{id_agent}/group/{id_group}'
+            request = WazuhAPIRequest(endpoint=endpoint, method='PUT')
+            request.send(WazuhAPI(address=self.get_host_variables('manager1')['ip']))
+
+    def assign_agents_group(self, list_id_agent, id_group, method='cmd'):
+        """Function to assign list of agents to a group.
+        Args:
+            list_id_agent (list): List of the agents.
+            id_group (str): Name of the group.
+            method (str): Method to be used to delete the group. Default: cmd.
+        """
+        if method == 'cmd':
+            for agent in list_id_agent:
+                self.logger.info(f'Assigning agent {agent} from group {id_group} using CMD')
+                self.assign_agent_group(agent, id_group)
+
+        if method == 'api':
+            self.logger.info(f'Assigning agent {list_id_agent} from group {id_group} using API in parallel')
+            for agent in list_id_agent:
+                endpoint = f'/agents/{agent}/group/{id_group}'
+                request = WazuhAPIRequest(endpoint=endpoint, method='PUT')
+                request.send(WazuhAPI(address=self.get_host_variables('manager1')['ip']))
+
+    def unassign_agent_group(self, id_agent, id_group):
+        """Function to unassign an agent to a group.
+        Args:
+            id_agent (str): Name of the agent.
+            id_group (str): Name of the group.
+        """
+        self.logger.info(f'Removing agent {id_agent} from group {id_group} using API')
+        endpoint = f'/agents/{id_agent}/group/{id_group}'
+        request = WazuhAPIRequest(endpoint=endpoint, method='DELETE')
+        request.send(WazuhAPI(address=self.get_host_variables('manager1')['ip']))
+
+    def unassign_agents_group(self, list_id_agent, id_group):
+        """Function to unassign list of agents to a group.
+        Args:
+            list_id_agent (list): List of the agents.
+            id_group (str): Name of the group.
+        """
+        self.logger.info(f'Removing agents {list_id_agent} from group {id_group} using API in parallel')
+        for agent in list_id_agent:
+            endpoint = f'/agents/{agent}/group/{id_group}'
+            request = WazuhAPIRequest(endpoint=endpoint, method='DELETE')
+            request.send(WazuhAPI(address=self.get_host_variables('manager1')['ip']))
+
+    def check_agent_groups(self, agent_id, group_to_check, hosts_list):
+        """Function to check the existence of an agent in a group.
+        Args:
+            agent_id (str): Name of agent.
+            group_to_check (str): Name of the group.
+            hosts_list (str): List of hosts from which the check will be performed.
+        """
+        # Check the expected group is in the group data for the agent
+        for host in hosts_list:
+            group_data = self.run_command(host, f'/var/ossec/bin/agent_groups -s -i {agent_id}', become=True)
+            self.logger.info(f'Checking agent {agent_id} in group {group_to_check}')
+            assert group_to_check in group_data[1], f"Did not recieve expected agent group: {group_to_check} in data \
+                                                {str(group_data)} in host {host}"
