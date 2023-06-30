@@ -575,7 +575,7 @@ class WazuhEnvironmentHandler(HostManager):
             host (str): Hostname
         """
         self.logger.debug(f'Stopping agent {host}')
-        service_name = WAZUH_ANGENT_WINDOWS_SERVICE_NAME if is_windows(host) else 'wazuh-agent'
+        service_name = WAZUH_ANGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
         if self.is_agent(host):
             self.control_service(host, service_name, 'stopped')
             self.logger.debug(f'Agent {host} stopped successfully')
@@ -632,7 +632,7 @@ class WazuhEnvironmentHandler(HostManager):
             host (str): Hostname
         """
         self.logger.debug(f'Starting agent {host}')
-        service_name = WAZUH_ANGENT_WINDOWS_SERVICE_NAME if is_windows(host) else 'wazuh-agent'
+        service_name = WAZUH_ANGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
         if self.is_agent(host):
             self.control_service(host, service_name, 'started')
             self.logger.debug(f'Agent {host} started successfully')
@@ -727,11 +727,11 @@ class WazuhEnvironmentHandler(HostManager):
             self.pool.map(self.stop_agent, agent_list)
         else:
             self.logger.info(message='Stopping environment: Managers')
-            for manager in get_managers():
+            for manager in manager_list:
                 self.stop_manager(manager)
 
             self.logger.info(message='Stopping environment: Agents')
-            for agent in get_agents():
+            for agent in agent_list:
                 self.stop_agent(agent)
 
         self.logger.info('Stopping environment')
@@ -754,11 +754,11 @@ class WazuhEnvironmentHandler(HostManager):
             self.pool.map(self.start_agent, agent_list)
         else:
             self.logger.info(message='Starting environment: Managers')
-            for manager in get_managers():
+            for manager in manager_list:
                 self.start_manager(manager)
 
             self.logger.info(message='Starting environment: Agents')
-            for agent in get_agents():
+            for agent in agent_list:
                 self.start_agent(agent)
 
         self.logger.info('Environment started successfully')
@@ -843,3 +843,57 @@ class WazuhEnvironmentHandler(HostManager):
             bool: True if host is manager
         """
         return host in self.get_managers()
+
+    def change_rules(self, host, file_path):
+        """Change local_rules for a new ruleset
+
+        Args:
+            host (str): Host name
+            file_path (str): Path of file that will replace local_rules_xml
+        """
+        with open(file_path, 'r') as file:
+            new_rules = file.read()
+        self.modify_file_content(host, '/var/ossec/etc/rules/local_rules.xml', new_rules, become=True)
+
+    def add_rule(self, host, file_path, rules_path):
+        """Add a rule to a rule-set
+
+        Args:
+            host (str): Host name
+            file_path (str): Path of file with new rules to be added to rules_path
+            rule_path (str): Path of file with rules
+        """
+        with open(file_path, 'r') as file:
+            new_rule = file.read()
+        current_rules = self.get_file_content(host, rules_path, become=True, ignore_errors=False)
+        index_rule = current_rules.rfind("</rule>")
+        if index_rule != -1:
+                    final_rules = current_rules[:index_rule] + '</rule>' + "\n" +  new_rule + '</group>'
+        self.modify_file_content(host, rules_path, final_rules, become=True, ignore_errors=True)
+
+    def change_decoders(self, host, file_path):
+        """Change local_decoder for new decoders
+
+        Args:
+            host (str): Host name
+            file_path (str): Path of file that will replace local_decoder.xml
+        """
+        with open(file_path, 'r') as file:
+            new_decoders = file.read()
+        self.modify_file_content(host, '/var/ossec/etc/decoders/local_decoder.xml', new_decoders, become=True)
+
+    def add_decoder(self, host, file_path, decoder_path):
+        """Add decoders to a decoder set
+
+        Args:
+            host (str): Host name
+            file_path (str): Path of file with new decoders to be added to decoder_path
+            decoder_path (str): Path of file with decoders
+        """
+        with open(file_path, 'r') as file:
+            new_decoder = file.read()
+        current_decoders = self.get_file_content(host, decoder_path, become=True, ignore_errors=False)
+        index_decoder = current_decoders.rfind("</decoder>")
+        if index_decoder != -1:
+                    final_decoders = current_decoders[:index_decoder] + '</decoder>' + "\n" + new_decoder
+        self.modify_file_content(host, decoder_path, final_decoders, become=True, ignore_errors=True)
