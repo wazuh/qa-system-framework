@@ -844,60 +844,61 @@ class WazuhEnvironmentHandler(HostManager):
         """
         return host in self.get_managers()
 
-    def change_rules(self, host, file_path):
-        """Change local_rules for a new ruleset
+    def change_rules(self, host, file_path, rule_path):
+        """Change local_rules for a new ruleset.
 
         Args:
             host (str): Host name
-            file_path (str): Path of file that will replace local_rules_xml
+            file_path (str): Path of the file that contains the new rules
+            rule_path (str): Path of the file that contains the old rule to be changed
         """
         with open(file_path, 'r') as file:
             new_rules = file.read()
-        self.logger.info(message=f'Changing local_rules.xml to {file_path}')
-        self.modify_file_content(host, '/var/ossec/etc/rules/local_rules.xml', new_rules, become=True)
+        self.logger.info(message=f"Changing {rule_path} to {file_path}")
+        self.modify_file_content(host, rule_path, new_rules, become=True)
 
     def add_rule(self, host, file_path, rules_path):
-        """Add a rule to a rule-set
-
+        """Add new rules to the provided rules file path.
         Args:
             host (str): Host name
-            file_path (str): Path of file with new rules to be added to rules_path
-            rule_path (str): Path of file with rules
+            file_path (str): Path of the file that contains the rules to be added to rules_path file
+            rules_path (str): Path of the file where the rules will be added
         """
         with open(file_path, 'r') as file:
             new_rule = file.read()
         current_rules = self.get_file_content(host, rules_path, become=True, ignore_errors=False)
         index_rule = current_rules.rfind("</rule>")
         if index_rule != -1:
-                    final_rules = current_rules[:index_rule] + '</rule>' + "\n" +  new_rule + '</group>'
-        self.logger.info(message=f'Adding rule from {file_path} to {rules_path}')
+                    final_rules = current_rules[:index_rule] + '</rule>n' +  new_rule + '</group>'
+        self.logger.info(message=f"Adding rule from {file_path} to {rules_path}")
         self.modify_file_content(host, rules_path, final_rules, become=True, ignore_errors=True)
 
-    def change_decoders(self, host, file_path):
-        """Change local_decoder for new decoders
+    def change_decoders(self, host, file_path, decoder_path):
+        """Change local_decoder for new decoders.
 
         Args:
             host (str): Host name
-            file_path (str): Path of file that will replace local_decoder.xml
+            file_path (str): Path of the file that contains the new decoders
+            decoder_path (str): Path of the file that contains the old decoders to be changed
         """
         with open(file_path, 'r') as file:
             new_decoders = file.read()
-        self.logger.info(message=f'Changing local_decoder.xml to {file_path}')
-        self.modify_file_content(host, '/var/ossec/etc/decoders/local_decoder.xml', new_decoders, become=True)
+        self.logger.info(message=f"Changing {decoder_path} to {file_path}")
+        self.modify_file_content(host, {decoder_path}, new_decoders, become=True)
 
-    def add_decoder(self, host, file_path, decoder_path):
-        """Add decoders to a decoder set
+    def add_decoder(self, host, file_path, decoders_path):
+        """Add new decoders to the provided decoer file path.
 
         Args:
             host (str): Host name
-            file_path (str): Path of file with new decoders to be added to decoder_path
-            decoder_path (str): Path of file with decoders
+            file_path (str): Path of file with new decoders to be added to decoder_path file
+            decoders_path (str): Path of the file where the decoders will be added
         """
         with open(file_path, 'r') as file:
             new_decoder = file.read()
-        current_decoders = self.get_file_content(host, decoder_path, become=True, ignore_errors=False)
+        current_decoders = self.get_file_content(host, decoders_path, become=True, ignore_errors=False)
         index_decoder = current_decoders.rfind("</decoder>")
         if index_decoder != -1:
-                    final_decoders = current_decoders[:index_decoder] + '</decoder>' + "\n" + new_decoder
-        self.logger.info(message=f'Adding decoder from {file_path} to {decoder_path}')
-        self.modify_file_content(host, decoder_path, final_decoders, become=True, ignore_errors=True)
+                    final_decoders = current_decoders[:index_decoder] + '</decoder>\n' + new_decoder
+        self.logger.info(message=f"Adding decoder from {file_path} to {decoders_path}")
+        self.modify_file_content(host, decoders_path, final_decoders, become=True, ignore_errors=True)
