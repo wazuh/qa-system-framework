@@ -699,7 +699,7 @@ class HostManager:
         return result
 
     def run_python_script(self, host, script, become=None, ignore_errors=False):
-        """Run a command on a host.
+        """Run a python script on a host.
 
         Args:
             host (str): Hostname
