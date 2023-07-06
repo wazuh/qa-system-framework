@@ -854,7 +854,7 @@ class WazuhEnvironmentHandler(HostManager):
         """
         with open(file_path, 'r') as file:
             new_rules = file.read()
-        self.logger.info(message=f"Changing {rule_path} to {file_path}")
+        self.logger.info(message=f'Changing {rule_path} to {file_path}')
         self.modify_file_content(host, rule_path, new_rules, become=True)
 
     def add_rule(self, host, file_path, rules_path):
@@ -870,7 +870,7 @@ class WazuhEnvironmentHandler(HostManager):
         index_rule = current_rules.rfind("</rule>")
         if index_rule != -1:
                     final_rules = current_rules[:index_rule] + '</rule>n' +  new_rule + '</group>'
-        self.logger.info(message=f"Adding rule from {file_path} to {rules_path}")
+        self.logger.info(message=f'Adding rule from {file_path} to {rules_path}')
         self.modify_file_content(host, rules_path, final_rules, become=True, ignore_errors=True)
 
     def change_decoders(self, host, file_path, decoder_path):
@@ -883,7 +883,7 @@ class WazuhEnvironmentHandler(HostManager):
         """
         with open(file_path, 'r') as file:
             new_decoders = file.read()
-        self.logger.info(message=f"Changing {decoder_path} to {file_path}")
+        self.logger.info(message=f'Changing {decoder_path} to {file_path}')
         self.modify_file_content(host, {decoder_path}, new_decoders, become=True)
 
     def add_decoder(self, host, file_path, decoders_path):
@@ -900,5 +900,5 @@ class WazuhEnvironmentHandler(HostManager):
         index_decoder = current_decoders.rfind("</decoder>")
         if index_decoder != -1:
                     final_decoders = current_decoders[:index_decoder] + '</decoder>\n' + new_decoder
-        self.logger.info(message=f"Adding decoder from {file_path} to {decoders_path}")
+        self.logger.info(message=f'Adding decoder from {file_path} to {decoders_path}')
         self.modify_file_content(host, decoders_path, final_decoders, become=True, ignore_errors=True)
