@@ -120,9 +120,16 @@ class WazuhAPI:
         Returns:
             str: Agent ID.
         """
+        agent_id = None
+
         for agent in response.data['affected_items']:
             if host_ip in agent['ip']:
-                return agent['id']
+                agent_id = agent['id']
+
+        if agent_id is None:
+            raise Exception('Agent not registered')
+        else:
+            return agent_id
 
     @WazuhAPIRequest(method='GET', endpoint='/agents?status=active')
     def get_active_agents(self, response):
