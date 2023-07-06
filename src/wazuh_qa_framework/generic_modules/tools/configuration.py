@@ -1,4 +1,5 @@
 import xml.etree.ElementTree as ET
+import yaml
 from typing import List
 
 
@@ -220,3 +221,28 @@ def set_section_wazuh_conf(sections, template=None):
             create_elements(section_conf, new_elements)
 
     return to_str_list(wazuh_conf)
+
+
+def configure_local_internal_options(new_conf):
+    local_internal_configuration_string = ''
+    for option_name, option_value in new_conf.items():
+        local_internal_configuration_string += f"{str(option_name)}={str(option_value)}\n"
+    return local_internal_configuration_string
+
+
+def configure_ossec_conf(new_conf, template):
+    new_configuration = ''.join(set_section_wazuh_conf(new_conf, template))
+    return new_configuration
+
+
+def configure_api_yaml(new_conf):
+    new_configuration = yaml.dump(new_conf)
+    return new_configuration
+
+
+conf_functions = {
+    'local_internal_options.conf': configure_local_internal_options,
+    'ossec.conf': configure_ossec_conf,
+    'agent.conf': configure_ossec_conf,
+    'api.yaml': configure_api_yaml
+}

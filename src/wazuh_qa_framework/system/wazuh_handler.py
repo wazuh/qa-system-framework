@@ -7,7 +7,7 @@ import yaml
 from multiprocessing.pool import ThreadPool
 
 from wazuh_qa_framework.generic_modules.logging.base_logger import BaseLogger
-from wazuh_qa_framework.generic_modules.tools.configuration import set_section_wazuh_conf
+from wazuh_qa_framework.generic_modules.tools.configuration import conf_functions
 from wazuh_qa_framework.global_variables.daemons import WAZUH_ANGENT_WINDOWS_SERVICE_NAME
 from wazuh_qa_framework.system.host_manager import HostManager
 
@@ -21,31 +21,6 @@ DEFAULT_INSTALL_PATH = {
 DEFAULT_TEMPORAL_DIRECTORY = {
     'linux': '/tmp',
     'windows': 'C:/Users/qa/AppData/Local/Temp'
-}
-
-
-def configure_local_internal_options(new_conf):
-    local_internal_configuration_string = ''
-    for option_name, option_value in new_conf.items():
-        local_internal_configuration_string += f"{str(option_name)}={str(option_value)}\n"
-    return local_internal_configuration_string
-
-
-def configure_ossec_conf(new_conf, template):
-    new_configuration = ''.join(set_section_wazuh_conf(new_conf, template))
-    return new_configuration
-
-
-def configure_api_yaml(new_conf):
-    new_configuration = yaml.dump(new_conf)
-    return new_configuration
-
-
-conf_functions = {
-    'local_internal_options.conf': configure_local_internal_options,
-    'ossec.conf': configure_ossec_conf,
-    'agent.conf': configure_ossec_conf,
-    'api.yaml': configure_api_yaml
 }
 
 
