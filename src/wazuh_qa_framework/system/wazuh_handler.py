@@ -7,7 +7,7 @@ import yaml
 from multiprocessing.pool import ThreadPool
 
 from wazuh_qa_framework.generic_modules.logging.base_logger import BaseLogger
-from wazuh_qa_framework.generic_modules.tools.configuration import conf_functions
+from wazuh_qa_framework.generic_modules.tools.configuration import conf_functions, xml_configuration_files
 from wazuh_qa_framework.global_variables.daemons import WAZUH_ANGENT_WINDOWS_SERVICE_NAME
 from wazuh_qa_framework.system.host_manager import HostManager
 
@@ -382,7 +382,7 @@ class WazuhEnvironmentHandler(HostManager):
         parameters = {'new_conf': configuration_values}
 
         # Get template for ossec.conf and agent.conf
-        if configuration_file == 'ossec.conf' or configuration_file == 'agent.conf':
+        if configuration_file in xml_configuration_files:
             current_configuration = self.get_file_content(host, host_configuration_file_path, become=True)
             parameters.update({'template': current_configuration})
 

@@ -4,6 +4,7 @@ from typing import List
 
 
 unlimited_sections = ['localfile', 'command', 'active-response']
+xml_configuration_files = ['ossec.conf', 'agent.conf']
 
 
 # customize _serialize_xml to avoid lexicographical order in XML attributes
