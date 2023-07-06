@@ -353,26 +353,13 @@ class WazuhEnvironmentHandler(HostManager):
         - local_internal_options configuration should be provided as a map
         - api.yaml should be provided as a map
 
-        Example:
-            local_internal_options:
-                remoted.debug: 2
-                wazuh_modulesd.debug: 2
-            ossec.conf:
-                - 'section': 'client',
-                  'elements':
-                  - 'server':
-                        'elements':
-                            - 'address':
-                                'value': 121.1.3.1
-            agent.conf:
-                - 'group': 'default',
-                - configuration:
-                    - 'section': 'client',
-                      'elements':
-                        - 'server':
-                            'elements':
-                                - 'address':
-                                    'value': 121.1.3.1
+        Examples:
+            - [('manager1', 'local_internal_options.conf', {'remoted.debug': '2'})]
+            - [('manager1', 'ossec.conf', [{'section': 'client', 'elements': [{'server': {'elements': [{'address':
+               {'value': '121.1.3.1'}}]}}]}])]
+            - [('manager1', 'agent.conf', {'group': 'default', 'configuration':
+               [{'section': 'client', 'elements': [{'server': {'elements': [{'address': {'value': '121.1.3.1'}}]}}]}]})]
+            - [('manager1', 'api.yaml', {'logs': {'level': 'debug'}})]
         Args:
             host (str): Hostname
             configuration_file (str): File name to be configured
@@ -409,20 +396,29 @@ class WazuhEnvironmentHandler(HostManager):
     def configure_environment(self, configuration_hosts, parallel=True):
         """Configure multiple hosts at the same time.
         Example:
-        wazuh-agent1:
-            local_internal_options:
-                remoted.debug: 2
-                wazuh_modulesd.debug: 2
+        wazuh-manager1:
+            local_internal_options.conf:
+              remoted.debug: '2'
             ossec.conf:
-                - 'section': 'client',
-                  'elements':
-                  - 'server':
-                        'elements':
-                            - 'address':
-                                'value': 121.1.3.1
-            api.yml:
-                ....
-        wazuh-agent2:
+            - section: client
+              elements:
+              - server:
+                  elements:
+                  - address:
+                      value: 121.1.3.1
+            agent.conf:
+              group: default
+              configuration:
+              - section: client
+                elements:
+                - server:
+                    elements:
+                    - address:
+                        value: 121.1.3.1
+            api.yaml:
+              logs:
+                level: debug
+        wazuh-agent1:
             ossec.conf:
                 ...
         Args:
