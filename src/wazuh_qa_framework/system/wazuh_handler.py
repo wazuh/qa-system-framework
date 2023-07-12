@@ -857,7 +857,7 @@ class WazuhEnvironmentHandler(HostManager):
             with open(new_rule_filename, 'r') as file:
                 new_rules = file.read()
 
-            if overwrite == True:
+            if overwrite:
                 self.logger.info(message=f'Changing {rules_filename} to {new_rule_filename}')
 
             else:
@@ -886,7 +886,7 @@ class WazuhEnvironmentHandler(HostManager):
             with open(new_decoder_filename, 'r') as file:
                 new_decoders = file.read()
 
-            if overwrite == True:
+            if overwrite:
                 self.logger.info(message=f'Changing {decoder_filename} to {new_decoder_filename}')
 
             else:
