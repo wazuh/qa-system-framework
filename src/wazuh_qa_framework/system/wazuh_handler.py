@@ -890,13 +890,13 @@ class WazuhEnvironmentHandler(HostManager):
                 self.logger.info(message=f'Changing {decoder_filename} to {new_decoder_filename}')
 
             else:
-                current_decoders = self.get_file_content(host, decoder_filename, become=True)
+                current_decoders = self.get_file_content(host, decoder_filename)
                 index_decoder = current_decoders.rfind("</decoder>")
                 if index_decoder != -1:
                     new_decoders = current_decoders[:index_decoder] + '</decoder>\n' + new_decoders
                 self.logger.info(message=f'Adding decoder from {new_decoder_filename} to {decoder_filename}')
 
-            self.modify_file_content(host, decoder_filename, new_decoders, become=True)
+            self.modify_file_content(host, decoder_filename, new_decoders)
             self.logger.info(message=f'Rules succefully updated')
 
         except FileNotFoundError:
