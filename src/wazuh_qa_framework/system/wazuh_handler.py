@@ -7,7 +7,7 @@ import re
 from multiprocessing.pool import ThreadPool
 
 from wazuh_qa_framework.generic_modules.logging.base_logger import BaseLogger
-from wazuh_qa_framework.global_variables.daemons import WAZUH_ANGENT_WINDOWS_SERVICE_NAME
+from wazuh_qa_framework.global_variables.daemons import WAZUH_AGENT_WINDOWS_SERVICE_NAME
 from wazuh_qa_framework.system.host_manager import HostManager
 
 
@@ -518,7 +518,7 @@ class WazuhEnvironmentHandler(HostManager):
             host (str): Hostname
         """
         self.logger.debug(f'Restarting agent {host}')
-        service_name = WAZUH_ANGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
+        service_name = WAZUH_AGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
         if self.is_agent(host):
             self.control_service(host, service_name, 'restarted')
             self.logger.debug(f'Agent {host} restarted successfully')
@@ -575,7 +575,7 @@ class WazuhEnvironmentHandler(HostManager):
             host (str): Hostname
         """
         self.logger.debug(f'Stopping agent {host}')
-        service_name = WAZUH_ANGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
+        service_name = WAZUH_AGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
         if self.is_agent(host):
             self.control_service(host, service_name, 'stopped')
             self.logger.debug(f'Agent {host} stopped successfully')
@@ -632,7 +632,7 @@ class WazuhEnvironmentHandler(HostManager):
             host (str): Hostname
         """
         self.logger.debug(f'Starting agent {host}')
-        service_name = WAZUH_ANGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
+        service_name = WAZUH_AGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
         if self.is_agent(host):
             self.control_service(host, service_name, 'started')
             self.logger.debug(f'Agent {host} started successfully')
@@ -844,61 +844,60 @@ class WazuhEnvironmentHandler(HostManager):
         """
         return host in self.get_managers()
 
-    def change_rules(self, host, file_path, rule_path):
-        """Change local_rules for a new ruleset.
+    def create_rule(self, host, new_rule_filename, rules_filename, overwrite=True):
+        """Create new rules replaces an existing rule file or adds rules to an existing one from a file.
 
         Args:
             host (str): Host name
-            file_path (str): Path of the file that contains the new rules
-            rule_path (str): Path of the file that contains the old rule to be changed
+            new_rule_filename (str): New rules filepath
+            rules_filename (str): Host rules filename
+            overwrite (bool): replace the rules file True, add rules to rules file, False. Defaults True
         """
-        with open(file_path, 'r') as file:
-            new_rules = file.read()
-        self.logger.info(message=f'Changing {rule_path} to {file_path}')
-        self.modify_file_content(host, rule_path, new_rules, become=True)
+        try:
+            with open(new_rule_filename, 'r') as file:
+                new_rules = file.read()
 
-    def add_rule(self, host, file_path, rules_path):
-        """Add new rules to the provided rules file path.
-        Args:
-            host (str): Host name
-            file_path (str): Path of the file that contains the rules to be added to rules_path file
-            rules_path (str): Path of the file where the rules will be added
-        """
-        with open(file_path, 'r') as file:
-            new_rule = file.read()
-        current_rules = self.get_file_content(host, rules_path, become=True, ignore_errors=False)
-        index_rule = current_rules.rfind("</rule>")
-        if index_rule != -1:
-                    final_rules = current_rules[:index_rule] + '</rule>n' +  new_rule + '</group>'
-        self.logger.info(message=f'Adding rule from {file_path} to {rules_path}')
-        self.modify_file_content(host, rules_path, final_rules, become=True, ignore_errors=True)
+            if overwrite == True:
+                self.logger.info(message=f'Changing {rules_filename} to {new_rule_filename}')
 
-    def change_decoders(self, host, file_path, decoder_path):
-        """Change local_decoder for new decoders.
+            else:
+                current_rules = self.get_file_content(host, rules_filename)
+                index_rule = current_rules.rfind("</rule>")
+                if index_rule != -1:
+                    new_rules = current_rules[:index_rule] + '</rule>\n' +  new_rules + '\n</group>'
+                self.logger.info(message=f'Adding rule from {new_rule_filename} to {rules_filename}')
 
-        Args:
-            host (str): Host name
-            file_path (str): Path of the file that contains the new decoders
-            decoder_path (str): Path of the file that contains the old decoders to be changed
-        """
-        with open(file_path, 'r') as file:
-            new_decoders = file.read()
-        self.logger.info(message=f'Changing {decoder_path} to {file_path}')
-        self.modify_file_content(host, {decoder_path}, new_decoders, become=True)
+            self.modify_file_content(host, rules_filename, new_rules)
+            self.logger.info(message=f'Rules succefully updated')
 
-    def add_decoder(self, host, file_path, decoders_path):
-        """Add new decoders to the provided decoer file path.
+        except FileNotFoundError:
+            self.logger.error(message=f'The file {new_rule_filename} does not exist.')
+
+    def create_decoder(self, host, new_decoder_filename, decoder_filename, overwrite=True):
+        """Create new decoder replaces an existing decoder file or adds decoders to an existing one from a file.
 
         Args:
             host (str): Host name
-            file_path (str): Path of file with new decoders to be added to decoder_path file
-            decoders_path (str): Path of the file where the decoders will be added
+            new_decoder_filename (str): New decoder filepath
+            rules_filename (str): Host decoder filename
+            overwrite (bool): replace the decoder file True, add decoders to decoders file, False. Defaults True
         """
-        with open(file_path, 'r') as file:
-            new_decoder = file.read()
-        current_decoders = self.get_file_content(host, decoders_path, become=True, ignore_errors=False)
-        index_decoder = current_decoders.rfind("</decoder>")
-        if index_decoder != -1:
-                    final_decoders = current_decoders[:index_decoder] + '</decoder>\n' + new_decoder
-        self.logger.info(message=f'Adding decoder from {file_path} to {decoders_path}')
-        self.modify_file_content(host, decoders_path, final_decoders, become=True, ignore_errors=True)
+        try:
+            with open(new_decoder_filename, 'r') as file:
+                new_decoders = file.read()
+
+            if overwrite == True:
+                self.logger.info(message=f'Changing {decoder_filename} to {new_decoder_filename}')
+
+            else:
+                current_decoders = self.get_file_content(host, decoder_filename, become=True)
+                index_decoder = current_decoders.rfind("</decoder>")
+                if index_decoder != -1:
+                    new_decoders = current_decoders[:index_decoder] + '</decoder>\n' + new_decoders
+                self.logger.info(message=f'Adding decoder from {new_decoder_filename} to {decoder_filename}')
+
+            self.modify_file_content(host, decoder_filename, new_decoders, become=True)
+            self.logger.info(message=f'Rules succefully updated')
+
+        except FileNotFoundError:
+            self.logger.error(message=f'The file {new_decoder_filename} does not exist.')
