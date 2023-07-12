@@ -856,10 +856,8 @@ class WazuhEnvironmentHandler(HostManager):
         try:
             with open(new_rule_filename, 'r') as file:
                 new_rules = file.read()
-
             if overwrite:
                 self.logger.info(message=f'Changing {rules_filename} to {new_rule_filename}')
-
             else:
                 current_rules = self.get_file_content(host, rules_filename)
                 index_rule = current_rules.rfind("</rule>")
@@ -888,14 +886,12 @@ class WazuhEnvironmentHandler(HostManager):
 
             if overwrite:
                 self.logger.info(message=f'Changing {decoder_filename} to {new_decoder_filename}')
-
             else:
                 current_decoders = self.get_file_content(host, decoder_filename)
                 index_decoder = current_decoders.rfind("</decoder>")
                 if index_decoder != -1:
                     new_decoders = current_decoders[:index_decoder] + '</decoder>\n' + new_decoders
                 self.logger.info(message=f'Adding decoder from {new_decoder_filename} to {decoder_filename}')
-
             self.modify_file_content(host, decoder_filename, new_decoders)
             self.logger.info(message=f'Rules succefully updated')
 
