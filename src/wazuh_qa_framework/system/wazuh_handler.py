@@ -863,7 +863,7 @@ class WazuhEnvironmentHandler(HostManager):
                 index_rule = current_rules.rfind("</rule>")
                 if index_rule != -1:
                     new_rules = current_rules[:index_rule] + '</rule>\n' +  new_rules + '\n</group>'
-                self.logger.info(message=f'Adding rule from {new_rule_filename} to {rules_filename}')
+                    self.logger.info(message=f'Adding rule from {new_rule_filename} to {rules_filename}')
 
             self.modify_file_content(host, rules_filename, new_rules)
             self.logger.info(message=f'Rules succefully updated')
@@ -891,7 +891,7 @@ class WazuhEnvironmentHandler(HostManager):
                 index_decoder = current_decoders.rfind("</decoder>")
                 if index_decoder != -1:
                     new_decoders = current_decoders[:index_decoder] + '</decoder>\n' + new_decoders
-                self.logger.info(message=f'Adding decoder from {new_decoder_filename} to {decoder_filename}')
+                    self.logger.info(message=f'Adding decoder from {new_decoder_filename} to {decoder_filename}')
             self.modify_file_content(host, decoder_filename, new_decoders)
             self.logger.info(message=f'Rules succefully updated')
 
