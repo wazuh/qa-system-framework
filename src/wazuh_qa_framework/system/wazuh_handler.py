@@ -848,10 +848,10 @@ class WazuhEnvironmentHandler(HostManager):
         """Create new rules replaces an existing rule file or adds rules to an existing file from a file.
 
         Args:
-            host (str): Host name
-            new_rule_filename (str): New rules filepath
-            rules_filename (str): Host rules filename
-            overwrite (bool): replace the rules file True, add rules to rules file, False. Defaults True
+            host (str): Host name.
+            new_rule_filename (str): New rules filepath.
+            rules_filename (str): Host rules filename.
+            overwrite (bool): replace the rules file True, add rules to rules file, False. Defaults to True.
         """
         try:
             with open(new_rule_filename, 'r') as file:
@@ -875,10 +875,10 @@ class WazuhEnvironmentHandler(HostManager):
         """Create new decoder replaces an existing decoder file or adds decoders to an existing file from a file.
 
         Args:
-            host (str): Host name
-            new_decoder_filename (str): New decoder filepath
-            rules_filename (str): Host decoder filename
-            overwrite (bool): replace the decoder file True, add decoders to decoders file, False. Defaults True
+            host (str): Host name.
+            new_decoder_filename (str): New decoder filepath.
+            rules_filename (str): Host decoder filename.
+            overwrite (bool): replace the decoder file True, add decoders to decoders file, False. Defaults to True.
         """
         try:
             with open(new_decoder_filename, 'r') as file:
