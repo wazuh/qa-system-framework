@@ -870,3 +870,30 @@ class WazuhEnvironmentHandler(HostManager):
 
         except FileNotFoundError:
             self.logger.error(message=f'The file {new_rule_filename} does not exist.')
+
+    def create_decoder(self, host, new_decoder_filename, decoder_filename, overwrite=True):
+        """Create new decoder replaces an existing decoder file or adds decoders to an existing file from a file.
+
+        Args:
+            host (str): Host name
+            new_decoder_filename (str): New decoder filepath
+            rules_filename (str): Host decoder filename
+            overwrite (bool): replace the decoder file True, add decoders to decoders file, False. Defaults True
+        """
+        try:
+            with open(new_decoder_filename, 'r') as file:
+                new_decoders = file.read()
+
+            if overwrite:
+                self.logger.info(message=f'Changing {decoder_filename} to {new_decoder_filename}')
+            else:
+                current_decoders = self.get_file_content(host, decoder_filename)
+                index_decoder = current_decoders.rfind("</decoder>")
+                if index_decoder != -1:
+                    new_decoders = current_decoders[:index_decoder] + '</decoder>\n' + new_decoders
+                    self.logger.info(message=f'Adding decoder from {new_decoder_filename} to {decoder_filename}')
+                    self.modify_file_content(host, decoder_filename, new_decoders)
+            self.logger.info(message=f'Rules succefully updated')
+
+        except FileNotFoundError:
+            self.logger.error(message=f'The file {new_decoder_filename} does not exist.')
