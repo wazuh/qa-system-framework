@@ -8,7 +8,7 @@ from functools import partial
 from multiprocessing.pool import ThreadPool
 
 from wazuh_qa_framework.generic_modules.logging.base_logger import BaseLogger
-from wazuh_qa_framework.global_variables.daemons import WAZUH_ANGENT_WINDOWS_SERVICE_NAME
+from wazuh_qa_framework.global_variables.daemons import WAZUH_AGENT_WINDOWS_SERVICE_NAME
 from wazuh_qa_framework.system.host_manager import HostManager
 
 
@@ -519,7 +519,7 @@ class WazuhEnvironmentHandler(HostManager):
             host (str): Hostname
         """
         self.logger.debug(f'Restarting agent {host}')
-        service_name = WAZUH_ANGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
+        service_name = WAZUH_AGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
         if self.is_agent(host):
             self.control_service(host, service_name, 'restarted')
             self.logger.debug(f'Agent {host} restarted successfully')
@@ -558,7 +558,7 @@ class WazuhEnvironmentHandler(HostManager):
         """Restart managers
 
         Args:
-            manager_list (list): Managers list
+            manager_list (list): Managers list.
             parallel (bool, optional): Parallel execution. Defaults to True.
         """
         self.logger.info(f'Restarting managers: {manager_list}')
@@ -569,50 +569,43 @@ class WazuhEnvironmentHandler(HostManager):
                 self.restart_manager(manager)
         self.logger.info(f'Managers restarted successfully: {manager_list}')
 
-    def stop_agent(self, host, type='gracefully'):
-        """Stop agent
+    def stop_agent(self, host, gracefully=True):
+        """Stop agent.
 
         Args:
-            host (str): Hostname
-            type (str): Type of stop, it can be gracefully or ungracefully. Defaults to gracefully
+            host (str): Hostname.
+            gracefully (bool): Stop gracefully. Defaults to True.
         """
-        self.logger.debug(f'Stopping agent {type} {host}')
-        service_name = WAZUH_ANGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
+        type = 'gracefully' if gracefully else 'ungracefully'
+        self.logger.debug(f'Stopping {type} {host}')
+        service_name = WAZUH_AGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
         if self.is_agent(host):
-            if type == 'gracefully':
-                if self.is_windows(host):
-                    self.control_service(host, service_name, 'stopped')
-                    self.logger.debug(f'Agent {host} stopped successfully')
-                else:
-                    self.control_service(host, service_name, 'stopped', become=True)
-                    self.logger.debug(f'Agent {host} stopped successfully')
+            if gracefully:
+                self.control_service(host, service_name, 'stopped')
 
-            if type == 'ungracefully':
-                if self.is_windows(host):
-                    self.run_command(host, 'taskkill /F /IM wazuh-agent.exe')
-                    self.logger.debug(f'Agent {host} stopped successfully')
-                else:
-                    self.run_command(host, "pkill -9 wazuh-agent", become=True)
-                    self.logger.debug(f'Agent {host} stopped successfully')
+            if not gracefully:
+                process = 'wazuh-agent.exe' if self.is_windows(host) else 'wazuh-agent'
+                self.stop_ungracefully_process(host, process)
+
+            self.logger.info(f'Agent {host} stopped {type}')
+
         else:
-            raise ValueError(f'Host {host} is not an agent')
+            raise ValueError(f'Host {host} is not an Agent')
 
-    def stop_agents(self, agent_list=None, parallel=True, type='gracefully'):
-        """Stop agents
+    def stop_agents(self, agent_list=None, parallel=True, gracefully=True):
+        """Stop agents.
 
         Args:
-            agent_list(list, optional): Agents list. Defaults to None
+            agent_list (list, optional): Agents list. Defaults to None.
             parallel (bool, optional): Parallel execution. Defaults to True.
-            type (str): Type of stop, it can be gracefully or ungracefully. Defaults to gracefully
+            gracefully (bool): Stop gracefully. Defaults to True.
         """
-        self.logger.info(f'Stopping agents {type}: {agent_list}')
         if parallel:
-            stop_agent_with_type = partial(self.stop_agent, type=type)
+            stop_agent_with_type = partial(self.stop_agent, gracefully=gracefully)
             self.pool.map(stop_agent_with_type, agent_list)
         else:
             for agent in agent_list:
-                self.stop_agent(agent, type)
-        self.logger.info(f'Agents stopped successfully: {agent_list}')
+                self.stop_agent(agent, gracefully)
 
     def stop_manager(self, host):
         """Stop manager
@@ -649,7 +642,7 @@ class WazuhEnvironmentHandler(HostManager):
             host (str): Hostname
         """
         self.logger.debug(f'Starting agent {host}')
-        service_name = WAZUH_ANGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
+        service_name = WAZUH_AGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
         if self.is_agent(host):
             self.control_service(host, service_name, 'started')
             self.logger.debug(f'Agent {host} started successfully')
@@ -744,11 +737,11 @@ class WazuhEnvironmentHandler(HostManager):
             self.pool.map(self.stop_agent, agent_list)
         else:
             self.logger.info(message='Stopping environment: Managers')
-            for manager in manager_list:
+            for manager in agent_list:
                 self.stop_manager(manager)
 
             self.logger.info(message='Stopping environment: Agents')
-            for agent in manager_list:
+            for agent in agent_list:
                 self.stop_agent(agent)
 
         self.logger.info('Stopping environment')
