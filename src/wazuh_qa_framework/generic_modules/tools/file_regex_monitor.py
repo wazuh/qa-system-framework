@@ -2,7 +2,7 @@
 Module to build a tool that allow us to monitor a file content and check if the content matches with a specified
 callback.
 
-We can configure this tools to check from the beggining of file or just check new lines from monitoring time. If the
+We can configure this tools to check from the beginning of file or just check new lines from monitoring time. If the
 callback is not matched, a TimeoutError exception will be raised.
 
 The monitoring will start as soon as the object is created. We don't need to do anymore.
