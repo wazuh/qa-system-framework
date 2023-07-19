@@ -90,9 +90,8 @@ class MonitoringObject:
             raise ValidationError('The timeout can\'t be a negative value')
 
         # Validate that callback is a callable function if given
-        if callback:
-            if not callable(callback):
-                raise ValidationError(f"The given callback {callback} is not a callable function.")
+        if callback and not callable(callback):
+            raise ValidationError(f"The given callback {callback} is not a callable function.")
 
     def get_default_callback(self):
         """Get the default callback lambda function.
