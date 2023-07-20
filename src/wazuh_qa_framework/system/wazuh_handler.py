@@ -468,7 +468,8 @@ class WazuhEnvironmentHandler(HostManager):
         """Backup specified files in host
 
         Args:
-            configuration_list (dict): Host configuration files to backup
+            host (str): Hostname to backup
+            file (str): File to backup
         Returns:
             dict: Host backup filepaths
         """
@@ -476,7 +477,7 @@ class WazuhEnvironmentHandler(HostManager):
         backup_paths = {host: {}}
         host_configuration_file_path = self.get_file_fullpath(host, file, group)
         temporal_folder = DEFAULT_TEMPORAL_DIRECTORY[self.get_ansible_host_os(host)]
-        backup_file = os.path.join(temporal_folder, file + '.backup',)
+        backup_file = os.path.join(temporal_folder, file + '.backup')
         backup_paths[host][host_configuration_file_path] = backup_file
 
         self.copy_file(host, host_configuration_file_path, backup_file, remote_src=True,
@@ -489,7 +490,7 @@ class WazuhEnvironmentHandler(HostManager):
         """Backup specified files in all hosts
 
         Args:
-            configuration_list (dict): Host configuration files to backup
+            configuration_hosts(dict): Host configuration files to backup
         Returns:
             dict: Host backup filepaths
         """
@@ -525,7 +526,8 @@ class WazuhEnvironmentHandler(HostManager):
         """Restore backup configuration
 
         Args:
-            backup_configuration (dict): Backup configuration filepaths
+            host (str): Hostname to restore
+            dest_file (str): File to restore
         """
         self.logger.debug(f"Restoring {dest_file} backup on {host}")
         self.copy_file(host=host, dest_path=dest_file,
@@ -536,7 +538,7 @@ class WazuhEnvironmentHandler(HostManager):
         """Restore environment backup configuration
 
         Args:
-            backup_configuration (dict): Backup configuration filepaths
+            backup_configurations (dict): Backup configuration filepaths
         """
         self.logger.info('Restoring backup')
         if parallel:
