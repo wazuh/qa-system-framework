@@ -859,7 +859,7 @@ class WazuhEnvironmentHandler(HostManager):
         """
         if method == 'cmd':
             self.logger.info(f'Creating group {group_name} from {manager} using CMD')
-            self.run_command(manager, f"{get_bin_directory_path()}/agent_groups -q -a -g {group_name}", become=True)
+            self.run_command(manager, f"{get_bin_directory_path()}/agent_groups -q -a -g {group_name}")
 
         if method == 'api':
             self.logger.info(f'Creating new {group_name} using API')
@@ -876,7 +876,7 @@ class WazuhEnvironmentHandler(HostManager):
         """
         if method == 'cmd':
             self.logger.info(f'Removing group {group_name} from {manager} using CMD')
-            self.run_command(manager , f"{get_bin_directory_path()}/agent_groups -q -r -g {group_name}", become=True)
+            self.run_command(manager, f"{get_bin_directory_path()}/agent_groups -q -r -g {group_name}")
 
         if method == 'api':
             self.logger.info(f'Removing group {group_name} using API')
@@ -886,7 +886,7 @@ class WazuhEnvironmentHandler(HostManager):
 
         if method == 'folder':
             self.logger.info(f'Removing group {group_name} deleting folder')
-            self.run_command(manager, f"rm -rf {get_shared_directory_path()}/{group_name}", become=True)
+            self.run_command(manager, f"rm -rf {get_shared_directory_path()}/{group_name}")
 
     def assign_agent_group(self, manager, id_agent, group_name, method='cmd'):
         """Function to assign an agent to a group.
@@ -898,7 +898,7 @@ class WazuhEnvironmentHandler(HostManager):
         """
         if method == 'cmd':
             self.logger.info(f'Assign agent {id_agent} to group {group_name} from {manager} using CMD')
-            self.run_command(manager , f"{get_bin_directory_path()}/agent_groups -q -a -i {id_agent} -g {group_name}", become=True)
+            self.run_command(manager, f"{get_bin_directory_path()}/agent_groups -q -a -i {id_agent} -g {group_name}")
 
         if method == 'api':
             self.logger.info(f'Assign agent {id_agent} to group {group_name} using API')
@@ -960,7 +960,7 @@ class WazuhEnvironmentHandler(HostManager):
         """
         # Check the expected group is in the group data for the agent
         for host in hosts_list:
-            group_data = self.run_command(host, f'{get_bin_directory_path()}/agent_groups -s -i {agent_id}', become=True)
+            group_data = self.run_command(host, f'{get_bin_directory_path()}/agent_groups -s -i {agent_id}')
             self.logger.info(f'Checking agent {agent_id} in group {group_name}')
             assert group_name in group_data[1], f"Did not recieve expected agent group: {group_name} in data \
                                                 {str(group_data)} in host {host}"
