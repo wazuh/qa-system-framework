@@ -870,7 +870,6 @@ class WazuhEnvironmentHandler(HostManager):
         self.logger.info(f'Checking agent {id_agent} in group {group_name}')
         return group_name in self.run_command(manager, f'{get_bin_directory_path()}/agent_groups -s -i {id_agent}')[1]
 
-
     def create_group(self, manager, group_name, method='cmd', check_previous=True):
         """Function to create a group.
         Args:
