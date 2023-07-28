@@ -580,17 +580,16 @@ class WazuhEnvironmentHandler(HostManager):
         self.logger.debug(f'Stopping {type} {host}')
         service_name = WAZUH_AGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
         if self.is_agent(host):
-            if gracefully:
-                self.control_service(host, service_name, 'stopped')
-
             if not gracefully:
                 process = 'wazuh-agent.exe' if self.is_windows(host) else 'wazuh-agent'
                 self.stop_ungracefully_process(host, process)
 
+            else:
+                self.control_service(host, service_name, 'stopped')
             self.logger.info(f'Agent {host} stopped {type}')
 
         else:
-            raise ValueError(f'Host {host} is not an Agent')
+            raise ValueError(f'Host {host} is not an agent')
 
     def stop_agents(self, agent_list=None, parallel=True, gracefully=True):
         """Stop agents.
@@ -606,6 +605,7 @@ class WazuhEnvironmentHandler(HostManager):
         else:
             for agent in agent_list:
                 self.stop_agent(agent, gracefully)
+        self.logger.info(f'Agents stopped successfully: {agent_list}')
 
     def stop_manager(self, host):
         """Stop manager
@@ -737,7 +737,7 @@ class WazuhEnvironmentHandler(HostManager):
             self.pool.map(self.stop_agent, agent_list)
         else:
             self.logger.info(message='Stopping environment: Managers')
-            for manager in agent_list:
+            for manager in manager_list:
                 self.stop_manager(manager)
 
             self.logger.info(message='Stopping environment: Agents')
