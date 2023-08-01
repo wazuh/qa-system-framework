@@ -924,7 +924,7 @@ class WazuhEnvironmentHandler(HostManager):
                     self.logger.info(message=f'{decoder_filename} does not exist to be overwritten')
                 else:
                     self.create_file(host, decoder_filename, new_decoders)
-                    self.logger.info(message=f'Decoders succefully added into a new decoder file named {decoder_filename}')
+                    self.logger.info(message=f'Decoders succefully added into a new file named {decoder_filename}')
 
         except FileNotFoundError:
             self.logger.error(message=f'The file {new_decoder_filepath} does not exist.')
