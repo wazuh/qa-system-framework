@@ -857,7 +857,7 @@ class WazuhEnvironmentHandler(HostManager):
             with open(new_rules_filepath, 'r') as file:
                 new_rules = file.read()
 
-            files_information = self.find_files('manager1', os.path.dirname(rules_filename), '*')
+            files_information = self.find_files(host, os.path.dirname(rules_filename), '*')
             file_exist = False
             for file_information in files_information:
                 if rules_filename in file_information['path']:
