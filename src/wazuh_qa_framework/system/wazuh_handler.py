@@ -844,56 +844,87 @@ class WazuhEnvironmentHandler(HostManager):
         """
         return host in self.get_managers()
 
-    def create_rule(self, host, new_rule_filename, rules_filename, overwrite=True):
+    def create_rule(self, host, new_rules_filepath, rules_filename, overwrite=True):
         """Create new rules replaces an existing rule file or adds rules to an existing file from a file.
 
         Args:
             host (str): Host name.
-            new_rule_filename (str): New rules filepath.
+            new_rules_filepath (str): New rules filepath.
             rules_filename (str): Host rules filename.
-            overwrite (bool): replace the rules file True, add rules to rules file, False. Defaults to True.
+            overwrite (bool): Replace the rules. Defaults to True.
         """
         try:
-            with open(new_rule_filename, 'r') as file:
+            with open(new_rules_filepath, 'r') as file:
                 new_rules = file.read()
-            if overwrite:
-                self.logger.info(message=f'Changing {rules_filename} to {new_rule_filename}')
-            else:
-                current_rules = self.get_file_content(host, rules_filename)
-                index_rule = current_rules.rfind("</rule>")
-                if index_rule != -1:
-                    new_rules = current_rules[:index_rule] + '</rule>\n' +  new_rules + '\n</group>'
-                    self.logger.info(message=f'Adding rule from {new_rule_filename} to {rules_filename}')
 
-            self.modify_file_content(host, rules_filename, new_rules)
-            self.logger.info(message=f'Rules succefully updated')
+            files_information = self.find_files('manager1', os.path.dirname(rules_filename), '*')
+            file_exist = False
+            for file_information in files_information:
+                if rules_filename in file_information['path']:
+                    file_exist = True
+                    break
+
+            if file_exist:
+                if overwrite:
+                    self.logger.info(message=f'Changing {rules_filename} to {new_rules_filepath}')
+                else:
+                    current_rules = self.get_file_content(host, rules_filename)
+                    index_rule = current_rules.rfind("</rule>")
+                    if index_rule != -1:
+                        new_rules = current_rules[:index_rule] + '</rule>\n' +  new_rules + '\n</group>'
+                        self.logger.info(message=f'Adding rule from {new_rules_filepath} to {rules_filename}')
+
+                self.modify_file_content(host, rules_filename, new_rules)
+                self.logger.info(message=f'Rules succefully updated')
+
+            else:
+                if overwrite:
+                    self.logger.info(message=f'{rules_filename} does not exist to be overwritten')
+                else: 
+                    self.create_file(host, rules_filename, f"<group>\n{new_rules}\n</group>")
+                    self.logger.info(message=f'Rules succefully added into a new rule file named {rules_filename}')
 
         except FileNotFoundError:
-            self.logger.error(message=f'The file {new_rule_filename} does not exist.')
+            self.logger.error(message=f'The file {new_rules_filepath} does not exist.')
 
-    def create_decoder(self, host, new_decoder_filename, decoder_filename, overwrite=True):
+    def create_decoder(self, host, new_decoder_filepath, decoder_filename, overwrite=True):
         """Create new decoder replaces an existing decoder file or adds decoders to an existing file from a file.
 
         Args:
             host (str): Host name.
-            new_decoder_filename (str): New decoder filepath.
-            rules_filename (str): Host decoder filename.
-            overwrite (bool): replace the decoder file True, add decoders to decoders file, False. Defaults to True.
+            new_decoder_filepath (str): New decoder filepath.
+            decoder_filename (str): Host decoder filename.
+            overwrite (bool): Replace the decoder file. Defaults to True.
         """
         try:
-            with open(new_decoder_filename, 'r') as file:
+            with open(new_decoder_filepath, 'r') as file:
                 new_decoders = file.read()
 
-            if overwrite:
-                self.logger.info(message=f'Changing {decoder_filename} to {new_decoder_filename}')
+            files_information = self.find_files(host, os.path.dirname(decoder_filename), '*')
+            file_exist = False
+            for file_information in files_information:
+                if decoder_filename in file_information['path']:
+                    file_exist = True
+                    break
+
+            if file_exist: 
+                if overwrite:
+                    self.logger.info(message=f'Changing {decoder_filename} to {new_decoder_filepath}')
+                else:
+                    current_decoders = self.get_file_content(host, decoder_filename)
+                    index_decoder = current_decoders.rfind("</decoder>")
+                    if index_decoder != -1:
+                        new_decoders = current_decoders[:index_decoder] + '</decoder>\n' + new_decoders
+                        self.logger.info(message=f'Adding decoder from {new_decoder_filepath} to {decoder_filename}')
+                self.modify_file_content(host, decoder_filename, new_decoders)
+                self.logger.info(message=f'Decoders succefully updated')
+
             else:
-                current_decoders = self.get_file_content(host, decoder_filename)
-                index_decoder = current_decoders.rfind("</decoder>")
-                if index_decoder != -1:
-                    new_decoders = current_decoders[:index_decoder] + '</decoder>\n' + new_decoders
-                    self.logger.info(message=f'Adding decoder from {new_decoder_filename} to {decoder_filename}')
-                    self.modify_file_content(host, decoder_filename, new_decoders)
-            self.logger.info(message=f'Rules succefully updated')
+                if overwrite:
+                    self.logger.info(message=f'{decoder_filename} does not exist to be overwritten')
+                else: 
+                    self.create_file(host, decoder_filename, new_decoders)
+                    self.logger.info(message=f'Decoders succefully added into a new decoder file named {decoder_filename}')
 
         except FileNotFoundError:
-            self.logger.error(message=f'The file {new_decoder_filename} does not exist.')
+            self.logger.error(message=f'The file {new_decoder_filepath} does not exist.')
