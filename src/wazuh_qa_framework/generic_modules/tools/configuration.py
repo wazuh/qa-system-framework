@@ -131,7 +131,7 @@ def set_section_wazuh_conf(sections, template=None):
         else:
             return str_list
 
-    def to_elementTree(str_list: List[str], root_delimeter: str = "</ossec_config>") -> ET.ElementTree:
+    def to_element_tree(str_list: List[str], root_delimeter: str = "</ossec_config>") -> ET.ElementTree:
         """
         Turn a list of str into an ElementTree object.
 
@@ -187,7 +187,7 @@ def set_section_wazuh_conf(sections, template=None):
 
     # Generate a ElementTree representation of the previous list to work with its sections
     root_delimeter = '</agent_config>' if '<agent_config>' in template else '</ossec_config>'
-    wazuh_conf = to_elementTree(template, root_delimeter)
+    wazuh_conf = to_element_tree(template, root_delimeter)
     for section in sections:
         attributes = section.get('attributes')
         section_conf = find_module_config(wazuh_conf, section['section'], attributes)
