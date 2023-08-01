@@ -880,7 +880,7 @@ class WazuhEnvironmentHandler(HostManager):
             else:
                 if overwrite:
                     self.logger.info(message=f'{rules_filename} does not exist to be overwritten')
-                else: 
+                else:
                     self.create_file(host, rules_filename, f"<group>\n{new_rules}\n</group>")
                     self.logger.info(message=f'Rules succefully added into a new rule file named {rules_filename}')
 
@@ -907,7 +907,7 @@ class WazuhEnvironmentHandler(HostManager):
                     file_exist = True
                     break
 
-            if file_exist: 
+            if file_exist:
                 if overwrite:
                     self.logger.info(message=f'Changing {decoder_filename} to {new_decoder_filepath}')
                 else:
@@ -922,7 +922,7 @@ class WazuhEnvironmentHandler(HostManager):
             else:
                 if overwrite:
                     self.logger.info(message=f'{decoder_filename} does not exist to be overwritten')
-                else: 
+                else:
                     self.create_file(host, decoder_filename, new_decoders)
                     self.logger.info(message=f'Decoders succefully added into a new decoder file named {decoder_filename}')
 
