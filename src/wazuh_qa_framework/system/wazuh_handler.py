@@ -506,7 +506,7 @@ class WazuhEnvironmentHandler(HostManager):
         """
         return self.wazuh_api.list_agents()
 
-    def get_agents_id(self, host):
+    def get_agent_id(self, host):
         """Get agents ID
 
         Returns:
@@ -527,7 +527,7 @@ class WazuhEnvironmentHandler(HostManager):
             if method == 'service':
                 self.control_service(host, service_name, 'restarted')
             elif method == 'api':
-                self.wazuh_api.restart_agent(self.get_agents_id(host))
+                self.wazuh_api.restart_agent(self.get_agent_id(host))
             self.logger.debug(f'Agent {host} restarted successfully')
         else:
             raise ValueError(f'Host {host} is not an agent')
