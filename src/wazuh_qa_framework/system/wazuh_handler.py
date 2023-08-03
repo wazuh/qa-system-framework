@@ -521,7 +521,7 @@ class WazuhEnvironmentHandler(HostManager):
             host (str): Hostname
             method (str): Method to restart agent
         """
-        self.logger.debug(f'Restarting agent {host}')
+        self.logger.debug(f'Restarting agent {host} via {method}')
         service_name = WAZUH_ANGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
         if self.is_agent(host):
             if method == 'service':
@@ -542,7 +542,10 @@ class WazuhEnvironmentHandler(HostManager):
         """
         self.logger.info(f'Restarting agents: {agent_list} via {method}')
         if parallel:
-            self.pool.map(self.restart_agent, agent_list, method)
+            restart_map = []
+            for agent in agent_list:
+                restart_map.append((agent, method))
+            self.pool.starmap(self.restart_agent, restart_map)
         else:
             for agent in agent_list:
                 self.restart_agent(agent, method)
@@ -570,7 +573,7 @@ class WazuhEnvironmentHandler(HostManager):
         """
         self.logger.info(f'Restarting managers: {manager_list}')
         if parallel:
-            self.pool.map(self.restart_manager, manager_list)
+            self.pool.starmap(self.restart_manager, manager_list)
         else:
             for manager in manager_list:
                 self.restart_manager(manager)
@@ -599,7 +602,7 @@ class WazuhEnvironmentHandler(HostManager):
         """
         self.logger.info(f'Stopping agents: {agent_list}')
         if parallel:
-            self.pool.map(self.stop_agent, agent_list)
+            self.pool.starmap(self.stop_agent, agent_list)
         else:
             for agent in agent_list:
                 self.restart_agent(agent)
@@ -627,7 +630,7 @@ class WazuhEnvironmentHandler(HostManager):
         """
         self.logger.info(f'Stopping managers: {manager_list}')
         if parallel:
-            self.pool.map(self.stop_manager, manager_list)
+            self.pool.starmap(self.stop_manager, manager_list)
         else:
             for manager in manager_list:
                 self.restart_manager(manager)
@@ -656,7 +659,7 @@ class WazuhEnvironmentHandler(HostManager):
         """
         self.logger.info(f'Starting agents: {agent_list}')
         if parallel:
-            self.pool.map(self.start_agent, agent_list)
+            self.pool.starmap(self.start_agent, agent_list)
         else:
             for agent in agent_list:
                 self.start_agent(agent)
@@ -684,7 +687,7 @@ class WazuhEnvironmentHandler(HostManager):
         """
         self.logger.info(f'Starting managers: {manager_list}')
         if parallel:
-            self.pool.map(self.start_manager, manager_list)
+            self.pool.starmap(self.start_manager, manager_list)
         else:
             for manager in manager_list:
                 self.start_manager(manager)
@@ -702,10 +705,10 @@ class WazuhEnvironmentHandler(HostManager):
 
         if parallel:
             self.logger.info(message='Restarting environment: Managers')
-            self.pool.map(self.restart_manager, manager_list)
+            self.pool.starmap(self.restart_manager, manager_list)
 
             self.logger.info(message='Restarting environment: Agents')
-            self.pool.map(self.restart_agent, agent_list)
+            self.pool.starmap(self.restart_agent, agent_list)
         else:
             self.logger.info(message='Restarting environment: Managers')
             for manager in manager_list:
@@ -729,10 +732,10 @@ class WazuhEnvironmentHandler(HostManager):
 
         if parallel:
             self.logger.info(message='Stopping environment: Managers')
-            self.pool.map(self.stop_manager, manager_list)
+            self.pool.starmap(self.stop_manager, manager_list)
 
             self.logger.info(message='Stopping environment: Agents')
-            self.pool.map(self.stop_agent, agent_list)
+            self.pool.starmap(self.stop_agent, agent_list)
         else:
             self.logger.info(message='Stopping environment: Managers')
             for manager in get_managers():
@@ -756,10 +759,10 @@ class WazuhEnvironmentHandler(HostManager):
 
         if parallel:
             self.logger.info(message='Starting environment: Managers')
-            self.pool.map(self.start_manager, manager_list)
+            self.pool.starmap(self.start_manager, manager_list)
 
             self.logger.info(message='Starting environment: Agents')
-            self.pool.map(self.start_agent, agent_list)
+            self.pool.starmap(self.start_agent, agent_list)
         else:
             self.logger.info(message='Starting environment: Managers')
             for manager in get_managers():
