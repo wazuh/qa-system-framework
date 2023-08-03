@@ -519,7 +519,7 @@ class WazuhEnvironmentHandler(HostManager):
 
         Args:
             host (str): Hostname
-            method (str):
+            method (str): Method to restart agent
         """
         self.logger.debug(f'Restarting agent {host}')
         service_name = WAZUH_ANGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
@@ -532,19 +532,20 @@ class WazuhEnvironmentHandler(HostManager):
         else:
             raise ValueError(f'Host {host} is not an agent')
 
-    def restart_agents(self, agent_list=None, parallel=True):
+    def restart_agents(self, agent_list=None, method='service', parallel=True):
         """Restart list of agents
 
         Args:
             agent_list (list, optional): Agent list. Defaults to None.
+            method (str, optional): Method to restart agents.
             parallel (bool, optional): Parallel execution. Defaults to True.
         """
-        self.logger.info(f'Restarting agents: {agent_list}')
+        self.logger.info(f'Restarting agents: {agent_list} via {method}')
         if parallel:
-            agent_restart_tasks = self.pool.map(self.restart_agent, agent_list)
+            self.pool.map(self.restart_agent, agent_list, method)
         else:
             for agent in agent_list:
-                self.restart_agent(agent)
+                self.restart_agent(agent, method)
         self.logger.info(f'Agents restarted successfully: {agent_list}')
 
     def restart_manager(self, host):
