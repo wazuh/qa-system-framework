@@ -509,13 +509,46 @@ class WazuhEnvironmentHandler(HostManager):
         """
         pass
 
+    def get_agent_id(self, agent_name):
+        """Get agent id
+
+        Returns:
+            agent_name: Agent name (str)
+        """
+        agent_ip = self.get_host_variables(agent_name).get('ip')
+        endpoint = f'/agents'
+        request = WazuhAPIRequest(endpoint=endpoint, method='GET')
+        for item in request.send(WazuhAPI(address=self.get_host_variables('manager1')['ip'])).data['affected_items']:
+            if item.get('ip') == agent_ip:
+                return item.get('id')
+
+    def get_agent_name_from_ip(self, agent_ip):
+        """Get agent name from ip
+
+        Returns:
+            agent_ip: Agent ip (str)
+        """
+        list_of_hosts = self.get_group_hosts()
+        for host in list_of_hosts:
+            if self.get_host_variables(host).get('ip') == agent_ip:
+                return self.get_host_variables(host).get('inventory_hostname_short')
+
     def get_agents_id(self, agents_list=None):
         """Get agents id
 
         Returns:
             List: Agents id list
         """
-        pass
+        result_id = []
+        for agent in agents_list:
+            agent_ip = self.get_host_variables(agent).get('ip')
+            endpoint = f'/agents'
+            request = WazuhAPIRequest(endpoint=endpoint, method='GET')
+            items = request.send(WazuhAPI(address=self.get_host_variables('manager1')['ip'])).data['affected_items']
+            for item in items:
+                if item.get('ip') == agent_ip:
+                    result_id.append(item.get('id'))
+        return result_id
 
     def restart_agent(self, host):
         """Restart agent
@@ -850,35 +883,74 @@ class WazuhEnvironmentHandler(HostManager):
         """
         return host in self.get_managers()
 
-    def check_group(self, manager, group_name):
-        """Function to check the existance of a group.
+    def get_group_list(self, manager, method='api'):
+        """Get list of groups.
+        Args:
+            manager (str): Name of the manager.
+            method (str): Method to be used to get information. Defaults to api.
+        """
+        group_list = []
+        self.logger.info(f'Requesting group list info using {method.upper()}')
+        if method == 'api':
+            endpoint = f'/groups'
+            request = WazuhAPIRequest(endpoint=endpoint, method='GET')
+            for item in request.send(WazuhAPI(address=self.get_host_variables(manager)['ip'])).data['affected_items']:
+                group_list.append(item['name'])
+        else:
+            group_list = self.run_command(manager, f'{get_bin_directory_path()}/agent_groups')
+            pattern = r'  ([^\s()]+) \(\d+\)'
+            group_list = re.findall(pattern, str(group_list))
+        return group_list
+
+    def get_agents_names_in_group(self, manager, group_name):
+        """Get list of agents in a specific group.
+        Args:
+            manager (str): Name of the manager.
+            group_name (str): Name of group.
+        """
+        agent_ip_list = []
+        agent_list = []
+        self.logger.info(f'Requesting agent info using API')
+        endpoint = f'/groups/{group_name}/agents'
+        request = WazuhAPIRequest(endpoint=endpoint, method='GET')
+        try:
+            for item in request.send(WazuhAPI(address=self.get_host_variables(manager)['ip'])).data['affected_items']:
+                agent_ip_list.append(item['ip'])
+            for agent in self.get_agents():
+                if self.get_host_variables(agent).get('ip') in agent_ip_list:
+                    agent_list.append(agent)
+            return agent_list
+        except TypeError:
+            self.logger.info(f'No agents were found in the group {group_name}')
+            return agent_list
+
+    def check_group(self, manager, group_name, method='api'):
+        """Check the existence of a group.
         Args:
             manager (str): Name of the manager.
             group_name (str): Name of the group.
-
+            method (str): Method to be used to check. Defaults to api.
         """
-        return True if group_name in self.run_command(manager, f"{get_bin_directory_path()}/agent_groups -l")[1] else False
+        return True if group_name in self.get_group_list(manager, method) else False
 
-    def check_agent_group(self, manager, id_agent, group_name):
-        """Function to check the existence of an agent in a group.
+    def check_agent_group(self, manager, agent_name, group_name):
+        """Check the existence of an agent in a group.
         Args:
             manager (str): Name of the manager.
-            id_agent (str): ID of agent.
+            agent_name (str): Name of agent.
             group_name (str): Name of the group.
         """
-        # Check the expected group is in the group data for the agent
-        self.logger.info(f'Checking agent {id_agent} in group {group_name}')
-        return group_name in self.run_command(manager, f'{get_bin_directory_path()}/agent_groups -s -i {id_agent}')[1]
+        return True if agent_name in self.get_agents_names_in_group(manager, group_name) else False
 
-    def create_group(self, manager, group_name, method='cmd', check_previous=True):
-        """Function to create a group.
+    def create_group(self, manager, group_name, method='api', check_group=True):
+        """Create a group.
         Args:
             manager (str): Name of the manager.
             group_name (str): Name of the group.
-            method (str): Method to be used to create the group. Defaults to cmd.
-            check_previous (bool): Check if the group exists.
+            method (str): Method to be used to create the group. Defaults to api.
+            check_group (str): Check if the agent is already assigned to the group.
         """
-        if check_previous and self.check_group(manager, group_name):
+        if check_group and self.check_group(manager, group_name):
             self.logger.info(f'{group_name} already exists')
         else:
             self.logger.info(f'Creating group {group_name} from {manager} using {method.upper()}')
@@ -889,90 +961,106 @@ class WazuhEnvironmentHandler(HostManager):
                 request = WazuhAPIRequest(endpoint=endpoint, payload={"group_id": group_name}, method='POST')
                 request.send(WazuhAPI(address=self.get_host_variables(manager)['ip']))
 
-    def delete_group(self, manager, group_name, method='cmd', check_previous=True):
-        """Function to delete a group.
+    def delete_group(self, manager, group_name, method='cmd', check_group=True):
+        """Delete a group.
         Args:
             manager (str): Name of the manager.
             group_name (str): Name of the group.
             method (str): Method to be used to delete the group. Defaults to cmd.
-            check_previous (str): Check if the group exists.
+            check_group (str): Check if the agent is already assigned to the group.
         """
-        if check_previous and not self.check_group(manager, group_name):
+        if check_group and not self.check_group(manager, group_name):
             self.logger.info(f'{group_name} does not exists')
-        else:   
+        else:
+            self.logger.info(f'Removing group {group_name} from {manager} using {method.upper()} method')
             if method == 'cmd':
-                self.logger.info(f'Removing group {group_name} from {manager} using CMD')
                 self.run_command(manager, f"{get_bin_directory_path()}/agent_groups -q -r -g {group_name}")
 
             if method == 'api':
-                self.logger.info(f'Removing group {group_name} using API')
                 endpoint = f'/groups?groups_list={group_name}'
                 request = WazuhAPIRequest(endpoint=endpoint, method='DELETE')
                 request.send(WazuhAPI(address=self.get_host_variables(manager)['ip']))
 
             if method == 'folder':
-                self.logger.info(f'Removing group {group_name} deleting folder')
                 self.run_command(manager, f"rm -rf {get_shared_directory_path()}/{group_name}")
 
-    def assign_agent_group(self, manager, id_agent, group_name, method='cmd', check_previous=True):
-        """Function to assign an agent to a group.
+    def assign_agent_group(self, manager, agent_name, group_name, method='api', check_group=True):
+        """Assign an agent to a group.
         Args:
             manager (str): Name of the manager.
-            id_agent (str): ID of the agent.
+            agent_name (str): Name of the agent.
             group_name (str): Name of the group.
-            method (str): Method to be used to delete the group. Defaults to cmd.
-            check_previous (str): Check if the agent is already assigned to the group.
+            method (str): Method to be used to delete the group. Defaults to api.
+            check_group (str): Check if the agent is already assigned to the group.
         """
-        if check_previous and self.check_agent_group(manager, id_agent, group_name):
-            self.logger.info(f'{id_agent} is assigned to {group_name}')
+        if check_group and self.check_agent_group(manager, agent_name, group_name):
+            self.logger.info(f'{agent_name} is already assigned to {group_name}')
         else:
+            self.logger.info(f'Assign agent {agent_name} to group {group_name} from {manager} using {method.upper()}')
             if method == 'cmd':
-                self.logger.info(f'Assign agent {id_agent} to group {group_name} from {manager} using CMD')
-                self.run_command(manager, 
-                                 f"{get_bin_directory_path()}/agent_groups -q -a -i {id_agent} -g {group_name}")
+                self.run_command(manager, (
+                                            f"{get_bin_directory_path()}/agent_groups -q -a "
+                                            f"-i {self.get_agent_id(agent_name)} "
+                                            f"-g {group_name}"
+                                            ))
 
             if method == 'api':
-                self.logger.info(f'Assign agent {id_agent} to group {group_name} using API')
-                endpoint = f'/agents/{id_agent}/group/{group_name}'
+                endpoint = f'/agents/{self.get_agent_id(agent_name)}/group/{group_name}'
                 request = WazuhAPIRequest(endpoint=endpoint, method='PUT')
                 request.send(WazuhAPI(address=self.get_host_variables(manager)['ip']))
 
-    def assign_agents_group(self, manager, list_id_agent, group_name, method='cmd', check_previous=True):
+    def assign_agents_group(self, manager, list_agent_names, group_name, method='api', check_group=True, parallel=True):
         """Function to assign list of agents to a group.
         Args:
             manager (str): Name of the manager.
-            list_id_agent (list): List of the agents ID.
+            list_agent_names (list): List of the agents names.
             group_name (str): Name of the group.
-            method (str): Method to be used to delete the group. Defaults to cmd.
-            check_previous (str): Check if the agents are already assigned to the group.
+            method (str): Method to be used to delete the group. Defaults to api.
+            check_group (str): Check if the agent is already assigned to the group.
+            parallel (bool, optional): Parallel execution. Defaults to True.
         """
-        for agent in list_id_agent:
-            self.logger.info(f'Assigning agent {agent} from group {group_name} from {manager} using CMD')
-            self.assign_agent_group(manager, agent, group_name, method=method, check_previous=check_previous)
+        if parallel:
+                    self.pool.map(
+                                    lambda agent: self.assign_agent_group(
+                                        manager, agent, group_name,
+                                        method=method, check_group=check_group
+                                    ),
+                                    list_agent_names
+                                )
+        else:
+            for agent in list_agent_names:
+                self.logger.info(f'Assigning agent {agent} from group {group_name} from {manager}')
+                self.assign_agent_group(manager, agent, group_name, method=method, check_group=check_group)
 
-    def unassign_agent_group(self, manager, id_agent, group_name, check_previous=True):
+    def unassign_agent_group(self, manager, agent_name, group_name, check_group=True):
         """Function to unassign an agent to a group.
         Args:
             manager (str): Name of the manager.
-            id_agent (str): ID of the agent.
+            agent_name (str): Name of the agent.
             group_name (str): Name of the group.
-            check_previous (str): Check if the agent is already assigned to the group.
+            check_group (str): Check if the agent is already assigned to the group.
         """
-        self.logger.info(f'Removing agent {id_agent} from group {group_name} using API')
-        if check_previous and not self.check_agent_group(manager, id_agent, group_name):
-            self.logger.info(f'{id_agent} is not assigned to {group_name}')
+        self.logger.info(f'Removing agent {agent_name} from group {group_name} using API')
+
+        if check_group and not self.check_agent_group(manager, agent_name, group_name):
+            self.logger.info(f'{agent_name} is not assigned to {group_name}')
         else:
-            endpoint = f'/agents/{id_agent}/group/{group_name}'
+            endpoint = f'/agents/{self.get_agent_id(agent_name)}/group/{group_name}'
             request = WazuhAPIRequest(endpoint=endpoint, method='DELETE')
             request.send(WazuhAPI(address=self.get_host_variables(manager)['ip']))
 
-    def unassign_agents_group(self, manager, list_id_agent, group_name, check_previous=True):
+    def unassign_agents_group(self, manager, list_agent_names, group_name, check_group=True, parallel=True):
         """Function to unassign list of agents to a group.
         Args:
             manager (str): Name of the manager.
-            list_id_agent (list): List of the agents ID.
+            list_agent_names (list): List of the agents names.
             group_name (str): Name of the group.
-            check_previous (str): Check if the agents are already assigned to the group.
+            check_group (str): Check if the agent is already assigned to the group.
         """
-        for agent in list_id_agent:
-            self.unassign_agent_group(manager, agent, group_name, check_previous=check_previous)
+        if parallel:
+            self.pool.map(lambda agent: self.unassign_agent_group(manager, agent, group_name, check_group=check_group),
+                        list_agent_names)
+
+        else:
+            for agent in self.get_agents_id(list_agent_names):
+                self.unassign_agent_group(manager, agent, group_name, check_previous=check_group)
