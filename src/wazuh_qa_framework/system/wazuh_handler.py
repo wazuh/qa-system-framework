@@ -998,11 +998,8 @@ class WazuhEnvironmentHandler(HostManager):
         else:
             self.logger.info(f'Assign agent {agent_name} to group {group_name} from {manager} using {method.upper()}')
             if method == 'cmd':
-                self.run_command(manager, (
-                                            f"{get_bin_directory_path()}/agent_groups -q -a "
-                                            f"-i {self.get_agent_id(agent_name)} "
-                                            f"-g {group_name}"
-                                            ))
+                self.run_command(manager, (f"{get_bin_directory_path()}/agent_groups -q -a "
+                                           f"-i {self.get_agent_id(agent_name)} -g {group_name}"))
 
             if method == 'api':
                 endpoint = f'/agents/{self.get_agent_id(agent_name)}/group/{group_name}'
@@ -1020,13 +1017,8 @@ class WazuhEnvironmentHandler(HostManager):
             parallel (bool, optional): Parallel execution. Defaults to True.
         """
         if parallel:
-                    self.pool.map(
-                                    lambda agent: self.assign_agent_group(
-                                        manager, agent, group_name,
-                                        method=method, check_group=check_group
-                                    ),
-                                    list_agent_names
-                                )
+            self.pool.map(lambda agent: self.assign_agent_group(manager, agent, group_name, method=method,
+                                                                check_group=check_group ),list_agent_names)
         else:
             for agent in list_agent_names:
                 self.logger.info(f'Assigning agent {agent} from group {group_name} from {manager}')
