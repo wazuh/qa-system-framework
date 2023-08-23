@@ -88,7 +88,7 @@ def get_ruleset_directory(custom_installation_path=None, os_name='linux'):
 
 
 def get_wazuh_file_path(custom_installation_path=None, os_host='linux', file_name=None, component=None, **extra_params):
-    """Get the Wazuh file paths
+    """Get the Wazuh file paths.
 
     Args:
         custom_installation_path (str): Custom installation path.
@@ -161,11 +161,11 @@ class WazuhEnvironmentHandler(HostManager):
     def get_file_fullpath(self, host, filename, group=None):
         """Get the path of common configuration and log file in the specified host.
         Args:
-            host (str): Hostname
-            filename (str): File name
-            group (str): Group name. Default `None`
+            host (str): Hostname.
+            filename (str): File name.
+            group (str): Group name. Default `None`.
         Returns:
-            str: Path of the file
+            str: Path of the file.
         """
         wazuh_installation_path = self.get_host_variables(host).get('wazuh_installation_path', None)
 
@@ -176,9 +176,9 @@ class WazuhEnvironmentHandler(HostManager):
     def get_configuration_directory_path(self, host):
         """Get the path of configuration directory in the specified host.
         Args:
-            host (str): Hostname
+            host (str): Hostname.
         Returns:
-            str: Path of the configuration directory
+            str: Path of the configuration directory.
         """
         custom_installation_path = self.get_host_variables(host).get('wazuh_installation_path', None)
         host_os = self.get_ansible_host_os(host)
@@ -189,9 +189,9 @@ class WazuhEnvironmentHandler(HostManager):
     def get_custom_decoders_directory_path(self, host):
         """Get the path of custom decoders directory in the specified host.
         Args:
-            host (str): Hostname
+            host (str): Hostname.
         Returns:
-            str: Path of the custom decoders directory
+            str: Path of the custom decoders directory.
         """
         custom_installation_path = self.get_host_variables(host).get('wazuh_installation_path', None)
         host_component = self.get_ansible_host_component(host)
@@ -206,9 +206,9 @@ class WazuhEnvironmentHandler(HostManager):
     def get_custom_rules_directory_path(self, host):
         """Get the path of custom rules directory in the specified host.
         Args:
-            host (str): Hostname
+            host (str): Hostname.
         Returns:
-            str: Path of the custom rules directory
+            str: Path of the custom rules directory.
         """
         custom_installation_path = self.get_host_variables(host).get('wazuh_installation_path', None)
         host_component = self.get_ansible_host_component(host)
@@ -223,9 +223,9 @@ class WazuhEnvironmentHandler(HostManager):
     def get_api_directory(self, host):
         """Get the path of API directory in the specified host.
         Args:
-            host (str): Hostname
+            host (str): Hostname.
         Returns:
-            str: Path of the API directory
+            str: Path of the API directory.
         """
         custom_installation_path = self.get_host_variables(host).get('wazuh_installation_path', None)
         host_component = self.get_ansible_host_component(host)
@@ -240,9 +240,9 @@ class WazuhEnvironmentHandler(HostManager):
     def get_api_configuration_directory(self, host):
         """Get the path of API configuration directory in the specified host.
         Args:
-            host (str): Hostname
+            host (str): Hostname.
         Returns:
-            str: Path of the API configuration directory
+            str: Path of the API configuration directory.
         """
         custom_installation_path = self.get_host_variables(host).get('wazuh_installation_path', None)
         host_component = self.get_ansible_host_component(host)
@@ -257,9 +257,9 @@ class WazuhEnvironmentHandler(HostManager):
     def get_alerts_directory_path(self, host):
         """Get the path of alert directory in the specified host.
         Args:
-            host (str): Hostname
+            host (str): Hostname.
         Returns:
-            str: Path of the alert directory
+            str: Path of the alert directory.
         """
         custom_installation_path = self.get_host_variables(host).get('wazuh_installation_path', None)
         host_component = self.get_ansible_host_component(host)
@@ -274,9 +274,9 @@ class WazuhEnvironmentHandler(HostManager):
     def get_archives_directory_path(self, host):
         """Get the path of archives directory in the specified host.
         Args:
-            host (str): Hostname
+            host (str): Hostname.
         Returns:
-            str: Path of the archives directory
+            str: Path of the archives directory.
         """
         custom_installation_path = self.get_host_variables(host).get('wazuh_installation_path', None)
         host_component = self.get_ansible_host_component(host)
@@ -291,9 +291,9 @@ class WazuhEnvironmentHandler(HostManager):
     def get_logs_directory_path(self, host):
         """Get the path of logs directory in the specified host.
         Args:
-            host (str): Hostname
+            host (str): Hostname.
         Returns:
-            str: Path of the logs directory
+            str: Path of the logs directory.
         """
         custom_installation_path = self.get_host_variables(host).get('wazuh_installation_path', None)
         host_os = self.get_ansible_host_os(host)
@@ -305,9 +305,9 @@ class WazuhEnvironmentHandler(HostManager):
     def get_shared_directory_path(self, host):
         """Get the path of shared directory in the specified host.
         Args:
-            host (str): Hostname
+            host (str): Hostname.
         Returns:
-            str: Path of the shared directory
+            str: Path of the shared directory.
         """
         custom_installation_path = self.get_host_variables(host).get('wazuh_installation_path', None)
         host_os = self.get_ansible_host_os(host)
@@ -319,9 +319,9 @@ class WazuhEnvironmentHandler(HostManager):
     def get_group_configuration_directory_path(self, host, group='default'):
         """Get the path of group configuration directory in the specified host.
         Args:
-            host (str): Hostname
+            host (str): Hostname.
         Returns:
-            str: Path of the group configuration directory
+            str: Path of the group configuration directory.
         """
         custom_installation_path = self.get_host_variables(host).get('wazuh_installation_path', None)
         host_os = self.get_ansible_host_os(host)
@@ -335,9 +335,9 @@ class WazuhEnvironmentHandler(HostManager):
     def get_ruleset_directory_path(self, host):
         """Get the path of ruleset directory in the specified host.
         Args:
-            host (str): Hostname
+            host (str): Hostname.
         Returns:
-            str: Path of the ruleset directory
+            str: Path of the ruleset directory.
         """
         custom_installation_path = self.get_host_variables(host).get('wazuh_installation_path', None)
         host_os = self.get_ansible_host_os(host)
@@ -347,11 +347,11 @@ class WazuhEnvironmentHandler(HostManager):
         return ruleset_directory_path
 
     def configure_host(self, host, configuration_host):
-        """Configure ossec.conf, agent.conf, api.conf and local_internal_options of specified host of the environment
+        """Configure ossec.conf, agent.conf, api.conf and local_internal_options of specified host of the environment.
         Configuration should fit the format expected for each configuration file:
         - ossec and agent.conf configuration should be provided as a list of configuration sections section.
-        - local_internal_options configuration should be provided as a map
-        - api.yaml should be provided as a map
+        - local_internal_options configuration should be provided as a map.
+        - api.yaml should be provided as a map.
 
         Example:
             local_internal_options:
@@ -374,8 +374,8 @@ class WazuhEnvironmentHandler(HostManager):
                                 - 'address':
                                     'value': 121.1.3.1
         Args:
-            host (str): Hostname
-            configuration_host (Map): Map with new hosts configuration
+            host (str): Hostname.
+            configuration_host (Map): Map with new hosts configuration.
         """
         pass
 
@@ -399,13 +399,13 @@ class WazuhEnvironmentHandler(HostManager):
             ossec.conf:
                 ...
         Args:
-            configuration_host (Map): Map with new hosts configuration
-            parallel(Boolean): Enable parallel tasks
+            configuration_host (Map): Map with new hosts configuration.
+            parallel(Boolean): Enable parallel tasks.
         """
         pass
 
     def change_agents_configure_manager(self, agent_list, manager, use_manager_name=True):
-        """Change configured manager of specified agent
+        """Change configured manager of specified agent.
 
         Args:
             agent (str): Agent name.
@@ -415,37 +415,37 @@ class WazuhEnvironmentHandler(HostManager):
         pass
 
     def backup_host_configuration(self, configuration_list):
-        """Backup specified files in
+        """Backup specified files in.
 
         Args:
-            configuration_list (dict): Host configuration files to backup
+            configuration_list (dict): Host configuration files to backup.
         Returns:
-            dict: Host backup filepaths
+            dict: Host backup filepaths.
         """
 
     def backup_environment_configuration(self, configuration_list, parallel=True):
-        """Backup specified files in all hosts
+        """Backup specified files in all hosts.
 
         Args:
-            configuration_list (dict): Host configuration files to backup
+            configuration_list (dict): Host configuration files to backup.
         Returns:
-            dict: Host backup filepaths
+            dict: Host backup filepaths.
         """
         pass
 
     def restore_host_backup_configuration(self, backup_configuration):
-        """Restore backup configuration
+        """Restore backup configuration.
 
         Args:
-            backup_configuration (dict): Backup configuration filepaths
+            backup_configuration (dict): Backup configuration filepaths.
         """
         pass
 
     def restore_environment_backup_configuration(self, backup_configuration, parallel=True):
-        """Restore environment backup configuration
+        """Restore environment backup configuration.
 
         Args:
-            backup_configuration (dict): Backup configuration filepaths
+            backup_configuration (dict): Backup configuration filepaths.
         """
         pass
 
@@ -453,10 +453,10 @@ class WazuhEnvironmentHandler(HostManager):
         """Search log in specified host file
 
         Args:
-            host (str): Hostname
-            pattern (str): Pattern to search
-            timeout (int): Timeout
-            file (str): Filepath
+            host (str): Hostname.
+            pattern (str): Pattern to search.
+            timeout (int): Timeout.
+            file (str): Filepath.
             escape (bool, optional): Escape special characters. Defaults to False.
             output_file (str, optional): Match results file. Defaults to 'find.json'.
 
@@ -466,36 +466,36 @@ class WazuhEnvironmentHandler(HostManager):
         pass
 
     def log_multisearch(self, multipattern_search, file, escape=False):
-        """Multihost log pattern
+        """Multihost log pattern.
 
         Args:
-            multipattern_search (dict): Multihost and multipattern  dictionary
+            multipattern_search (dict): Multihost and multipattern  dictionary.
             file (str, optional): Filepath.
             escape (bool, optional): Escape special characters. Defaults to False.
         Returns:
-            srt: Search results
+            srt: Search results.
         """
         pass
 
     def get_ansible_host_os(self, host):
-        """Get host os
+        """Get host os.
 
         Args:
-            host (str): Hostname
+            host (str): Hostname.
 
         Returns:
-            str: Host os
+            str: Host os.
         """
         return self.get_host_variables(host)['os_name']
 
     def get_ansible_host_component(self, host):
-        """Get host os
+        """Get host os.
 
         Args:
-            host (str): Hostname
+            host (str): Hostname.
 
         Returns:
-            str: Host os
+            str: Host os.
         """
         agent_list = self.get_agents()
         manager_list = self.get_managers()
@@ -505,16 +505,17 @@ class WazuhEnvironmentHandler(HostManager):
         """Get registered agents information.
 
         Returns:
-            dict: Agent information
+            dict: Agent information.
         """
         pass
 
     def get_agent_id(self, manager, agent_name):
-        """Get agent id   
-            manager: Manager name (str)     
-            agent_name: Agent name (str)
+        """Get agent id.
+        Args:
+            manager: Manager name (str).
+            agent_name: Agent name (str).
         Returns:
-            str: Agent id
+            str: Agent id.
         """
         agent_ip = self.get_host_variables(agent_name).get('ip')
         endpoint = f'/agents'
@@ -524,10 +525,11 @@ class WazuhEnvironmentHandler(HostManager):
                 return item.get('id')
 
     def get_agent_name_from_ip(self, agent_ip):
-        """Get agent name from ip
-            agent_ip: Agent ip (str)
+        """Get agent name from ip.
+        Args:
+            agent_ip: Agent ip (str).
         Returns:
-            str: Agent ip (str)
+            str: Agent ip (str).
         """
         list_of_hosts = self.get_group_hosts()
         for host in list_of_hosts:
@@ -535,11 +537,12 @@ class WazuhEnvironmentHandler(HostManager):
                 return self.get_host_variables(host).get('inventory_hostname_short')
 
     def get_agents_id(self, manager, agents_list=None):
-        """Get agents id
-            manager: Manager name (str)     
-            agents_list: Agents list (list)
+        """Get agents id.
+        Args:
+            manager: Manager name (str).
+            agents_list: Agents list (list).
         Returns:
-            List: Agents id (list)
+            List: Agents id (list).
         """
         result_id = []
         for agent in agents_list:
@@ -553,10 +556,10 @@ class WazuhEnvironmentHandler(HostManager):
         return result_id
 
     def restart_agent(self, host):
-        """Restart agent
+        """Restart agent.
 
         Args:
-            host (str): Hostname
+            host (str): Hostname.
         """
         self.logger.debug(f'Restarting agent {host}')
         service_name = WAZUH_AGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
@@ -567,7 +570,7 @@ class WazuhEnvironmentHandler(HostManager):
             raise ValueError(f'Host {host} is not an agent')
 
     def restart_agents(self, agent_list=None, parallel=True):
-        """Restart list of agents
+        """Restart list of agents.
 
         Args:
             agent_list (list, optional): Agent list. Defaults to None.
@@ -582,10 +585,10 @@ class WazuhEnvironmentHandler(HostManager):
         self.logger.info(f'Agents restarted successfully: {agent_list}')
 
     def restart_manager(self, host):
-        """Restart manager
+        """Restart manager.
 
         Args:
-            host (str): Hostname
+            host (str): Hostname.
         """
         self.logger.debug(f'Restarting manager {host}')
         if self.is_manager(host):
@@ -595,10 +598,10 @@ class WazuhEnvironmentHandler(HostManager):
             ValueError(f'Host {host} is not a manager')
 
     def restart_managers(self, manager_list, parallel=True):
-        """Restart managers
+        """Restart managers.
 
         Args:
-            manager_list (list): Managers list
+            manager_list (list): Managers list.
             parallel (bool, optional): Parallel execution. Defaults to True.
         """
         self.logger.info(f'Restarting managers: {manager_list}')
@@ -610,10 +613,10 @@ class WazuhEnvironmentHandler(HostManager):
         self.logger.info(f'Managers restarted successfully: {manager_list}')
 
     def stop_agent(self, host):
-        """Stop agent
+        """Stop agent.
 
         Args:
-            host (str): Hostname
+            host (str): Hostname.
         """
         self.logger.debug(f'Stopping agent {host}')
         service_name = WAZUH_AGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
@@ -624,10 +627,10 @@ class WazuhEnvironmentHandler(HostManager):
             raise ValueError(f'Host {host} is not an agent')
 
     def stop_agents(self, agent_list=None, parallel=True):
-        """Stop agents
+        """Stop agents.
 
         Args:
-            agent_list(list, optional): Agents list. Defaults to None
+            agent_list(list, optional): Agents list. Defaults to None.
             parallel (bool, optional): Parallel execution. Defaults to True.
         """
         self.logger.info(f'Stopping agents: {agent_list}')
@@ -639,10 +642,10 @@ class WazuhEnvironmentHandler(HostManager):
         self.logger.info(f'Agents stopped successfully: {agent_list}')
 
     def stop_manager(self, host):
-        """Stop manager
+        """Stop manager.
 
         Args:
-            host (str): Hostname
+            host (str): Hostname.
         """
         self.logger.debug(f'Stopping manager {host}')
         if self.is_manager(host):
@@ -652,10 +655,10 @@ class WazuhEnvironmentHandler(HostManager):
             raise ValueError(f'Host {host} is not a manager')
 
     def stop_managers(self, manager_list, parallel=True):
-        """Stop managers
+        """Stop managers.
 
         Args:
-            manager_list (list): Managers list
+            manager_list (list): Managers list.
             parallel (bool, optional): Parallel execution. Defaults to True.
         """
         self.logger.info(f'Stopping managers: {manager_list}')
@@ -667,10 +670,10 @@ class WazuhEnvironmentHandler(HostManager):
         self.logger.info(f'Stopping managers: {manager_list}')
 
     def start_agent(self, host):
-        """Start agent
+        """Start agent.
 
         Args:
-            host (str): Hostname
+            host (str): Hostname.
         """
         self.logger.debug(f'Starting agent {host}')
         service_name = WAZUH_AGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
@@ -681,10 +684,10 @@ class WazuhEnvironmentHandler(HostManager):
             raise ValueError(f'Host {host} is not an agent')
 
     def start_agents(self, agent_list, parallel=True):
-        """Start agents
+        """Start agents.
 
         Args:
-            agent_list (list): Agents list
+            agent_list (list): Agents list.
             parallel (bool, optional): Parallel execution. Defaults to True.
         """
         self.logger.info(f'Starting agents: {agent_list}')
@@ -696,10 +699,10 @@ class WazuhEnvironmentHandler(HostManager):
         self.logger.info(f'Agents started successfully: {agent_list}')
 
     def start_manager(self, host):
-        """Start manager
+        """Start manager.
 
         Args:
-            host (str): Hostname
+            host (str): Hostname.
         """
         self.logger.debug(f'Starting manager {host}')
         if self.is_manager(host):
@@ -709,10 +712,10 @@ class WazuhEnvironmentHandler(HostManager):
             raise ValueError(f'Host {host} is not a manager')
 
     def start_managers(self, manager_list, parallel=True):
-        """Start managers
+        """Start managers.
 
         Args:
-            manager_list (list): Managers list
+            manager_list (list): Managers list.
             parallel (bool, optional): Parallel execution. Defaults to True.
         """
         self.logger.info(f'Starting managers: {manager_list}')
@@ -724,7 +727,7 @@ class WazuhEnvironmentHandler(HostManager):
         self.logger.info(f'Managers started successfully: {manager_list}')
 
     def restart_environment(self, parallel=True):
-        """Restart all agents and manager in the environment
+        """Restart all agents and manager in the environment.
 
         Args:
             parallel (bool, optional): Parallel execution. Defaults to True.
@@ -751,7 +754,7 @@ class WazuhEnvironmentHandler(HostManager):
         self.logger.info('Environment restarted successfully')
 
     def stop_environment(self, parallel=True):
-        """Stop all agents and manager in the environment
+        """Stop all agents and manager in the environment.
 
         Args:
             parallel (bool, optional): Parallel execution. Defaults to True.
@@ -778,7 +781,7 @@ class WazuhEnvironmentHandler(HostManager):
         self.logger.info('Stopping environment')
 
     def start_environment(self, parallel=True):
-        """Start all agents and manager in the environment
+        """Start all agents and manager in the environment.
 
         Args:
             parallel (bool, optional): Parallel execution. Defaults to True.
@@ -805,23 +808,23 @@ class WazuhEnvironmentHandler(HostManager):
         self.logger.info('Environment started successfully')
 
     def get_master_node(self):
-        """Get master manager hostname
+        """Get master manager hostname.
 
         Returns:
-            str: Manager master node
+            str: Manager master node.
         """
         pass
 
     def get_api_details(self):
-        """Get api details
+        """Get api details.
 
         Returns:
-            dict: Api details
+            dict: Api details.
         """
         pass
 
     def clean_client_keys(self, hosts=None):
-        """Clean client keys
+        """Clean client keys.
 
         Args:
             hosts (str, optional): Hostname. Defaults to None.
@@ -829,7 +832,7 @@ class WazuhEnvironmentHandler(HostManager):
         pass
 
     def clean_agents(self, agents=None):
-        """Stop agents, remove them from manager and clean their client keys
+        """Stop agents, remove them from manager and clean their client keys.
 
         Args:
             agents (_type_, agents_list): Agents list. Defaults to None.
@@ -837,7 +840,7 @@ class WazuhEnvironmentHandler(HostManager):
         pass
 
     def remove_agents_from_manager(self, agents=None, status='all', older_than='0s'):
-        """Remove agents from manager
+        """Remove agents from manager.
 
         Args:
             agents (list, optional): Agents list. Defaults to None.
@@ -845,43 +848,43 @@ class WazuhEnvironmentHandler(HostManager):
             older_than (str, optional): Older than parameter. Defaults to '0s'.
 
         Returns:
-            dict: API response
+            dict: API response.
         """
         pass
 
     def get_managers(self):
-        """Get environment managers names
+        """Get environment managers names.
 
         Returns:
-            List: Managers names list
+            List: Managers names list.
         """
         return self.get_group_hosts('manager')
 
     def get_agents(self):
-        """Get environment agents names
+        """Get environment agents names.
 
         Returns:
-            List: Agent names list
+            List: Agent names list.
         """
         return self.get_group_hosts('agent')
 
     def is_agent(self, host):
-        """Check if host is agent
+        """Check if host is agent.
 
         Args:
-            host (str): Hostname
+            host (str): Hostname.
         Returns:
-            bool: True if host is agent
+            bool: True if host is agent.
         """
         return host in self.get_agents()
 
     def is_manager(self, host):
-        """Check if host is manager
+        """Check if host is manager.
 
         Args:
-            host (str): Hostname
+            host (str): Hostname.
         Returns:
-            bool: True if host is manager
+            bool: True if host is manager.
         """
         return host in self.get_managers()
 
