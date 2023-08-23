@@ -509,7 +509,7 @@ class WazuhEnvironmentHandler(HostManager):
         """
         pass
 
-    def get_agent_id(self, agent_name):
+    def get_agent_id(self, manager, agent_name):
         """Get agent id
 
         Returns:
@@ -518,7 +518,7 @@ class WazuhEnvironmentHandler(HostManager):
         agent_ip = self.get_host_variables(agent_name).get('ip')
         endpoint = f'/agents'
         request = WazuhAPIRequest(endpoint=endpoint, method='GET')
-        for item in request.send(WazuhAPI(address=self.get_host_variables('manager1')['ip'])).data['affected_items']:
+        for item in request.send(WazuhAPI(address=self.get_host_variables(manager)['ip'])).data['affected_items']:
             if item.get('ip') == agent_ip:
                 return item.get('id')
 
@@ -533,7 +533,7 @@ class WazuhEnvironmentHandler(HostManager):
             if self.get_host_variables(host).get('ip') == agent_ip:
                 return self.get_host_variables(host).get('inventory_hostname_short')
 
-    def get_agents_id(self, agents_list=None):
+    def get_agents_id(self, manager, agents_list=None):
         """Get agents id
 
         Returns:
@@ -544,7 +544,7 @@ class WazuhEnvironmentHandler(HostManager):
             agent_ip = self.get_host_variables(agent).get('ip')
             endpoint = f'/agents'
             request = WazuhAPIRequest(endpoint=endpoint, method='GET')
-            items = request.send(WazuhAPI(address=self.get_host_variables('manager1')['ip'])).data['affected_items']
+            items = request.send(WazuhAPI(address=self.get_host_variables(manager)['ip'])).data['affected_items']
             for item in items:
                 if item.get('ip') == agent_ip:
                     result_id.append(item.get('id'))
@@ -955,10 +955,10 @@ class WazuhEnvironmentHandler(HostManager):
         else:
             self.logger.info(f'Creating group {group_name} from {manager} using {method.upper()}')
             if method == 'cmd':
-                self.run_command(manager, f"{get_bin_directory_path()}/agent_groups -q -a -g {group_name}")
+                self.run_command(manager, f'{get_bin_directory_path()}/agent_groups -q -a -g {group_name}')
             elif method == 'api':
                 endpoint = '/groups'
-                request = WazuhAPIRequest(endpoint=endpoint, payload={"group_id": group_name}, method='POST')
+                request = WazuhAPIRequest(endpoint=endpoint, payload={'group_id': group_name}, method='POST')
                 request.send(WazuhAPI(address=self.get_host_variables(manager)['ip']))
 
     def delete_group(self, manager, group_name, method='cmd', check_group=True):
@@ -974,7 +974,7 @@ class WazuhEnvironmentHandler(HostManager):
         else:
             self.logger.info(f'Removing group {group_name} from {manager} using {method.upper()} method')
             if method == 'cmd':
-                self.run_command(manager, f"{get_bin_directory_path()}/agent_groups -q -r -g {group_name}")
+                self.run_command(manager, f'{get_bin_directory_path()}/agent_groups -q -r -g {group_name}')
 
             if method == 'api':
                 endpoint = f'/groups?groups_list={group_name}'
@@ -982,7 +982,7 @@ class WazuhEnvironmentHandler(HostManager):
                 request.send(WazuhAPI(address=self.get_host_variables(manager)['ip']))
 
             if method == 'folder':
-                self.run_command(manager, f"rm -rf {get_shared_directory_path()}/{group_name}")
+                self.run_command(manager, f'rm -rf {get_shared_directory_path()}/{group_name}')
 
     def assign_agent_group(self, manager, agent_name, group_name, method='api', check_group=True):
         """Assign an agent to a group.
@@ -998,11 +998,11 @@ class WazuhEnvironmentHandler(HostManager):
         else:
             self.logger.info(f'Assign agent {agent_name} to group {group_name} from {manager} using {method.upper()}')
             if method == 'cmd':
-                self.run_command(manager, (f"{get_bin_directory_path()}/agent_groups -q -a "
-                                           f"-i {self.get_agent_id(agent_name)} -g {group_name}"))
+                self.run_command(manager, (f'{get_bin_directory_path()}/agent_groups -q -a '
+                                           f'-i {self.get_agent_id(manager, agent_name)} -g {group_name}'))
 
             if method == 'api':
-                endpoint = f'/agents/{self.get_agent_id(agent_name)}/group/{group_name}'
+                endpoint = f'/agents/{self.get_agent_id(manager, agent_name)}/group/{group_name}'
                 request = WazuhAPIRequest(endpoint=endpoint, method='PUT')
                 request.send(WazuhAPI(address=self.get_host_variables(manager)['ip']))
 
@@ -1018,7 +1018,7 @@ class WazuhEnvironmentHandler(HostManager):
         """
         if parallel:
             self.pool.map(lambda agent: self.assign_agent_group(manager, agent, group_name, method=method,
-                                                                check_group=check_group ),list_agent_names)
+                                                                check_group=check_group ), list_agent_names)
         else:
             for agent in list_agent_names:
                 self.logger.info(f'Assigning agent {agent} from group {group_name} from {manager}')
@@ -1037,7 +1037,7 @@ class WazuhEnvironmentHandler(HostManager):
         if check_group and not self.check_agent_group(manager, agent_name, group_name):
             self.logger.info(f'{agent_name} is not assigned to {group_name}')
         else:
-            endpoint = f'/agents/{self.get_agent_id(agent_name)}/group/{group_name}'
+            endpoint = f'/agents/{self.get_agent_id(manager, agent_name)}/group/{group_name}'
             request = WazuhAPIRequest(endpoint=endpoint, method='DELETE')
             request.send(WazuhAPI(address=self.get_host_variables(manager)['ip']))
 
@@ -1054,5 +1054,5 @@ class WazuhEnvironmentHandler(HostManager):
                         list_agent_names)
 
         else:
-            for agent in self.get_agents_id(list_agent_names):
+            for agent in self.get_agents_id(manager, list_agent_names):
                 self.unassign_agent_group(manager, agent, group_name, check_previous=check_group)
