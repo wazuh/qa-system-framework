@@ -1018,7 +1018,7 @@ class WazuhEnvironmentHandler(HostManager):
         """
         if parallel:
             self.pool.map(lambda agent: self.assign_agent_group(manager, agent, group_name, method=method,
-                                                                check_group=check_group ), list_agent_names)
+                                                                check_group=check_group), list_agent_names)
         else:
             for agent in list_agent_names:
                 self.logger.info(f'Assigning agent {agent} from group {group_name} from {manager}')
@@ -1051,7 +1051,7 @@ class WazuhEnvironmentHandler(HostManager):
         """
         if parallel:
             self.pool.map(lambda agent: self.unassign_agent_group(manager, agent, group_name, check_group=check_group),
-                        list_agent_names)
+                          list_agent_names)
 
         else:
             for agent in self.get_agents_id(manager, list_agent_names):
