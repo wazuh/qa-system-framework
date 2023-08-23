@@ -510,10 +510,11 @@ class WazuhEnvironmentHandler(HostManager):
         pass
 
     def get_agent_id(self, manager, agent_name):
-        """Get agent id
-
-        Returns:
+        """Get agent id   
+            manager: Manager name (str)     
             agent_name: Agent name (str)
+        Returns:
+            str: Agent id
         """
         agent_ip = self.get_host_variables(agent_name).get('ip')
         endpoint = f'/agents'
@@ -524,9 +525,9 @@ class WazuhEnvironmentHandler(HostManager):
 
     def get_agent_name_from_ip(self, agent_ip):
         """Get agent name from ip
-
-        Returns:
             agent_ip: Agent ip (str)
+        Returns:
+            str: Agent ip (str)
         """
         list_of_hosts = self.get_group_hosts()
         for host in list_of_hosts:
@@ -535,9 +536,10 @@ class WazuhEnvironmentHandler(HostManager):
 
     def get_agents_id(self, manager, agents_list=None):
         """Get agents id
-
+            manager: Manager name (str)     
+            agents_list: Agents list (list)
         Returns:
-            List: Agents id list
+            List: Agents id (list)
         """
         result_id = []
         for agent in agents_list:
@@ -1047,7 +1049,8 @@ class WazuhEnvironmentHandler(HostManager):
             manager (str): Name of the manager.
             list_agent_names (list): List of the agents names.
             group_name (str): Name of the group.
-            check_group (str): Check if the agent is already assigned to the group.
+            check_group (boo, optional): Check if the agent is already assigned to the group.
+            parallel (bool, optional): Parallel execution. Defaults to True.
         """
         if parallel:
             self.pool.map(lambda agent: self.unassign_agent_group(manager, agent, group_name, check_group=check_group),
