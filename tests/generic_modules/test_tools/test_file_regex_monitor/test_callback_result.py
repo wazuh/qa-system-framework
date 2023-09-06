@@ -12,7 +12,7 @@ Test cases:
 import re
 
 from wazuh_qa_framework.meta_testing.utils import DEFAULT_LOG_MESSAGE, append_log
-from wazuh_qa_framework.generic_modules.tools.file_regex_monitor import FileRegexMonitor
+from wazuh_qa_framework.generic_modules.tools.file_regex_monitor import MonitoringObject, FileRegexMonitor
 
 
 def custom_callback(line):
@@ -55,7 +55,8 @@ def test_get_callback_group_values(create_destroy_sample_file):
     append_log(log_file, DEFAULT_LOG_MESSAGE)
 
     # Start the file regex monitoring
-    file_regex_monitor_process = FileRegexMonitor(monitored_file=log_file, callback=custom_callback, timeout=1)
+    monitoring = MonitoringObject(callback=custom_callback, timeout=1, monitored_file=log_file)
+    file_regex_monitor_process = FileRegexMonitor(monitoring=monitoring)
 
     # Check that callback results values are the expected ones.
     assert file_regex_monitor_process.callback_result == ('2023/02/14 09:49:47', 'aws-s3', 'INFO')
