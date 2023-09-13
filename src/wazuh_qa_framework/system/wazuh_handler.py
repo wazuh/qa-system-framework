@@ -1017,7 +1017,7 @@ class WazuhEnvironmentHandler(HostManager):
                     current_rules = self.get_file_content(host, rules_filename)
                     index_rule = current_rules.rfind("</rule>")
                     if index_rule != -1:
-                        new_rules = current_rules[:index_rule] + '</rule>\n' +  new_rules + '\n</group>'
+                        new_rules = current_rules[:index_rule] + '</rule>\n' + new_rules + '\n</group>'
                         self.logger.info(message=f'Adding rule from {new_rules_filepath} to {rules_filename}')
 
                 self.modify_file_content(host, rules_filename, new_rules)
