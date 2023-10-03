@@ -9,6 +9,7 @@ from multiprocessing.pool import ThreadPool
 from wazuh_qa_framework.generic_modules.logging.base_logger import BaseLogger
 from wazuh_qa_framework.global_variables.daemons import WAZUH_AGENT_WINDOWS_SERVICE_NAME
 from wazuh_qa_framework.system.host_manager import HostManager
+from wazuh_qa_framework.wazuh_components.api.wazuh_api import WazuhAPI
 
 
 DEFAULT_INSTALL_PATH = {
@@ -156,6 +157,8 @@ class WazuhEnvironmentHandler(HostManager):
         logger_level = 'debug' if debug else 'info'
         logger_formatter = 'verbose' if debug else 'basic'
         self.logger = BaseLogger('WazuhEnvironment', level=logger_level, output_source=True)
+
+        self.wazuh_api = WazuhAPI(address=self.get_host_ansible_ip(self.get_master_node()))
 
     def get_file_fullpath(self, host, filename, group=None):
         """Get the path of common configuration and log file in the specified host.
@@ -610,44 +613,52 @@ class WazuhEnvironmentHandler(HostManager):
         Returns:
             dict: Agent information
         """
-        pass
+        return self.wazuh_api.list_agents()
 
-    def get_agents_id(self, agents_list=None):
-        """Get agents id
+    def get_agent_id(self, host):
+        """Get agents ID
 
         Returns:
-            List: Agents id list
+            str: Agent ID
         """
-        pass
+        return self.wazuh_api.get_agent_id(host_ip=self.get_host_ansible_ip(host))
 
-    def restart_agent(self, host):
+    def restart_agent(self, host, method='service'):
         """Restart agent
 
         Args:
             host (str): Hostname
+            method (str): Method to restart agent
         """
-        self.logger.debug(f'Restarting agent {host}')
-        service_name = WAZUH_AGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
+        self.logger.debug(f'Restarting agent {host} via {method}')
+        service_name = WAZUH_ANGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
         if self.is_agent(host):
-            self.control_service(host, service_name, 'restarted')
-            self.logger.debug(f"Agent {host} restarted successfully")
+            if method == 'service':
+                self.control_service(host, service_name, 'restarted')
+            elif method == 'api':
+                self.wazuh_api.restart_agent(self.get_agent_id(host))
+            self.logger.debug(f'Agent {host} restarted successfully')
         else:
             raise ValueError(f"Host {host} is not an agent")
 
-    def restart_agents(self, agent_list=None, parallel=True):
+    def restart_agents(self, agent_list=None, method='service', parallel=True):
         """Restart list of agents
 
         Args:
             agent_list (list, optional): Agent list. Defaults to None.
+            method (str, optional): Method to restart agents.
             parallel (bool, optional): Parallel execution. Defaults to True.
         """
-        self.logger.info(f"Restarting agents: {agent_list}")
+        self.logger.info(f'Restarting agents: {agent_list} via {method}')
         if parallel:
-            self.pool.map(self.restart_agent, agent_list)
+            restart_map = []
+            for agent in agent_list:
+                restart_map.append((agent, method))
+            self.pool.starmap(self.restart_agent, restart_map)
         else:
             for agent in agent_list:
-                self.restart_agent(agent)
-        self.logger.info(f"Agents restarted successfully: {agent_list}")
+                self.restart_agent(agent, method)
+        self.logger.info(f'Agents restarted successfully: {agent_list}')
 
     def restart_manager(self, host):
         """Restart manager
@@ -671,7 +682,7 @@ class WazuhEnvironmentHandler(HostManager):
         """
         self.logger.info(f"Restarting managers: {manager_list}")
         if parallel:
-            self.pool.map(self.restart_manager, manager_list)
+            self.pool.starmap(self.restart_manager, manager_list)
         else:
             for manager in manager_list:
                 self.restart_manager(manager)
@@ -700,7 +711,7 @@ class WazuhEnvironmentHandler(HostManager):
         """
         self.logger.info(f"Stopping agents: {agent_list}")
         if parallel:
-            self.pool.map(self.stop_agent, agent_list)
+            self.pool.starmap(self.stop_agent, agent_list)
         else:
             for agent in agent_list:
                 self.restart_agent(agent)
@@ -728,7 +739,7 @@ class WazuhEnvironmentHandler(HostManager):
         """
         self.logger.info(f"Stopping managers: {manager_list}")
         if parallel:
-            self.pool.map(self.stop_manager, manager_list)
+            self.pool.starmap(self.stop_manager, manager_list)
         else:
             for manager in manager_list:
                 self.restart_manager(manager)
@@ -757,7 +768,7 @@ class WazuhEnvironmentHandler(HostManager):
         """
         self.logger.info(f"Starting agents: {agent_list}")
         if parallel:
-            self.pool.map(self.start_agent, agent_list)
+            self.pool.starmap(self.start_agent, agent_list)
         else:
             for agent in agent_list:
                 self.start_agent(agent)
@@ -785,7 +796,7 @@ class WazuhEnvironmentHandler(HostManager):
         """
         self.logger.info(f"Starting managers: {manager_list}")
         if parallel:
-            self.pool.map(self.start_manager, manager_list)
+            self.pool.starmap(self.start_manager, manager_list)
         else:
             for manager in manager_list:
                 self.start_manager(manager)
@@ -803,10 +814,10 @@ class WazuhEnvironmentHandler(HostManager):
 
         if parallel:
             self.logger.info(message='Restarting environment: Managers')
-            self.pool.map(self.restart_manager, manager_list)
+            self.pool.starmap(self.restart_manager, manager_list)
 
             self.logger.info(message='Restarting environment: Agents')
-            self.pool.map(self.restart_agent, agent_list)
+            self.pool.starmap(self.restart_agent, agent_list)
         else:
             self.logger.info(message='Restarting environment: Managers')
             for manager in manager_list:
@@ -830,10 +841,10 @@ class WazuhEnvironmentHandler(HostManager):
 
         if parallel:
             self.logger.info(message='Stopping environment: Managers')
-            self.pool.map(self.stop_manager, manager_list)
+            self.pool.starmap(self.stop_manager, manager_list)
 
             self.logger.info(message='Stopping environment: Agents')
-            self.pool.map(self.stop_agent, agent_list)
+            self.pool.starmap(self.stop_agent, agent_list)
         else:
             self.logger.info(message='Stopping environment: Managers')
             for manager in self.get_managers():
@@ -857,10 +868,10 @@ class WazuhEnvironmentHandler(HostManager):
 
         if parallel:
             self.logger.info(message='Starting environment: Managers')
-            self.pool.map(self.start_manager, manager_list)
+            self.pool.starmap(self.start_manager, manager_list)
 
             self.logger.info(message='Starting environment: Agents')
-            self.pool.map(self.start_agent, agent_list)
+            self.pool.starmap(self.start_agent, agent_list)
         else:
             self.logger.info(message='Starting environment: Managers')
             for manager in self.get_managers():
@@ -1006,7 +1017,7 @@ class WazuhEnvironmentHandler(HostManager):
                     current_rules = self.get_file_content(host, rules_filename)
                     index_rule = current_rules.rfind("</rule>")
                     if index_rule != -1:
-                        new_rules = current_rules[:index_rule] + '</rule>\n' +  new_rules + '\n</group>'
+                        new_rules = current_rules[:index_rule] + '</rule>\n' + new_rules + '\n</group>'
                         self.logger.info(message=f'Adding rule from {new_rules_filepath} to {rules_filename}')
 
                 self.modify_file_content(host, rules_filename, new_rules)
