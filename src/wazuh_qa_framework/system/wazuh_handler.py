@@ -1143,10 +1143,10 @@ class WazuhEnvironmentHandler(HostManager):
             self.logger.info(f'Assign agent {agent_name} to group {group_name} from {manager} using {method.upper()}')
             if method == 'cmd':
                 self.run_command(manager, (f'{get_bin_directory_path()}/agent_groups -q -a '
-                                           f'-i {self.get_agent_id(manager, agent_name)} -g {group_name}'))
+                                           f'-i {self.get_agent_id(agent_name)} -g {group_name}'))
 
             if method == 'api':
-                endpoint = f'/agents/{self.get_agent_id(manager, agent_name)}/group/{group_name}'
+                endpoint = f'/agents/{self.get_agent_id(agent_name)}/group/{group_name}'
                 request = WazuhAPIRequest(endpoint=endpoint, method='PUT')
                 request.send(WazuhAPI(address=self.get_host_variables(manager)['ip']))
 
@@ -1181,7 +1181,7 @@ class WazuhEnvironmentHandler(HostManager):
         if check_group and not self.check_agent_group(manager, agent_name, group_name):
             self.logger.info(f'{agent_name} is not assigned to {group_name}')
         else:
-            endpoint = f'/agents/{self.get_agent_id(manager, agent_name)}/group/{group_name}'
+            endpoint = f'/agents/{self.get_agent_id(agent_name)}/group/{group_name}'
             request = WazuhAPIRequest(endpoint=endpoint, method='DELETE')
             request.send(WazuhAPI(address=self.get_host_variables(manager)['ip']))
 
