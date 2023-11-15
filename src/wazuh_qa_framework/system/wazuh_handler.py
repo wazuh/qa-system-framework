@@ -3,7 +3,7 @@
 # This program is free software; you can redistribute it and/or modify it under the terms of GPLv2
 
 import os
-import re
+import yaml
 from multiprocessing.pool import ThreadPool
 
 from wazuh_qa_framework.generic_modules.logging.base_logger import BaseLogger
@@ -12,10 +12,16 @@ from wazuh_qa_framework.system.host_manager import HostManager
 from wazuh_qa_framework.wazuh_components.api.wazuh_api import WazuhAPI
 from wazuh_qa_framework.wazuh_components.api.wazuh_api_request import WazuhAPIRequest
 
+
 DEFAULT_INSTALL_PATH = {
     'linux': '/var/ossec',
-    'windows': 'C:\\Program Files\\ossec-agent',
+    'windows': 'C:/Program Files (x86)/ossec-agent',
     'darwin': '/Library/Ossec'
+}
+
+DEFAULT_TEMPORAL_DIRECTORY = {
+    'linux': '/tmp',
+    'windows': 'C:/Users/qa/AppData/Local/Temp'
 }
 
 
@@ -46,7 +52,7 @@ def get_api_directory(custom_installation_path=None):
 
 def get_api_configuration_directory(custom_installation_path=None):
     installation_path = custom_installation_path if custom_installation_path else DEFAULT_INSTALL_PATH['linux']
-    return os.path.join(get_api_directory(custom_installation_path), 'configuration')
+    return os.path.join(get_api_directory(installation_path), 'configuration')
 
 
 def get_alert_directory_path(custom_installation_path=None):
@@ -74,10 +80,10 @@ def get_group_configuration_directory(custom_installation_path=None, os_host='li
     installation_path = custom_installation_path if custom_installation_path else DEFAULT_INSTALL_PATH[os_host]
     group_configuration_path = None
     if component == 'manager':
-        group_configuration_path = os.path.join(get_shared_directory_path(custom_installation_path, os_host),
+        group_configuration_path = os.path.join(get_shared_directory_path(installation_path, os_host),
                                                 group)
     else:
-        group_configuration_path = os.path.join(get_shared_directory_path(custom_installation_path, os_host))
+        group_configuration_path = os.path.join(get_shared_directory_path(installation_path, os_host))
 
     return group_configuration_path
 
@@ -138,7 +144,7 @@ def get_wazuh_file_path(custom_installation_path=None, os_host='linux', file_nam
             'files': ['agent.conf'],
             'path_calculator': lambda filename: os.path.join(get_group_configuration_directory(installation_path,
                                                                                                os_host,
-                                                                                               group_name=group,
+                                                                                               group=group,
                                                                                                component=component),
                                                              filename)
         }
@@ -157,6 +163,8 @@ class WazuhEnvironmentHandler(HostManager):
         logger_level = 'debug' if debug else 'info'
         logger_formatter = 'verbose' if debug else 'basic'
         self.logger = BaseLogger('WazuhEnvironment', level=logger_level, output_source=True)
+
+        self.wazuh_api = WazuhAPI(address=self.get_host_ansible_ip(self.get_master_node()))
 
     def get_file_fullpath(self, host, filename, group=None):
         """Get the path of common configuration and log file in the specified host.
@@ -346,108 +354,212 @@ class WazuhEnvironmentHandler(HostManager):
 
         return ruleset_directory_path
 
-    def configure_host(self, host, configuration_host):
-        """Configure ossec.conf, agent.conf, api.conf and local_internal_options of specified host of the environment.
+    def configure_host(self, host, configuration_file, configuration_values):
+        """Configure ossec.conf, agent.conf, api.conf and local_internal_options of specified host of the environment
         Configuration should fit the format expected for each configuration file:
         - ossec and agent.conf configuration should be provided as a list of configuration sections section.
         - local_internal_options configuration should be provided as a map.
         - api.yaml should be provided as a map.
 
-        Example:
-            local_internal_options:
-                remoted.debug: 2
-                wazuh_modulesd.debug: 2
-            ossec.conf:
-                - 'section': 'client',
-                  'elements':
-                  - 'server':
-                        'elements':
-                            - 'address':
-                                'value': 121.1.3.1
-            agent.conf:
-                - 'group': 'default',
-                - configuration:
-                    - 'section': 'client',
-                      'elements':
-                        - 'server':
-                            'elements':
-                                - 'address':
-                                    'value': 121.1.3.1
+        Examples:
+            - [('manager1', 'local_internal_options.conf', {'remoted.debug': '2'})]
+            - [('manager1', 'ossec.conf', [{'section': 'client', 'elements': [{'server': {'elements': [{'address':
+               {'value': '121.1.3.1'}}]}}]}])]
+            - [('manager1', 'agent.conf', {'group': 'default', 'configuration':
+               [{'section': 'client', 'elements': [{'server': {'elements': [{'address': {'value': '121.1.3.1'}}]}}]}]})]
+            - [('manager1', 'api.yaml', {'logs': {'level': 'debug'}})]
         Args:
-            host (str): Hostname.
-            configuration_host (Map): Map with new hosts configuration.
+            host (str): Hostname
+            configuration_file (str): File name to be configured
+            configuration_values (dict): Dictionary with the new configuration
         """
-        pass
+        self.logger.debug(f"Configuring {configuration_file} in {host}")
+
+        if configuration_file not in conf_functions:
+            raise Exception(f"Invalid operation for {configuration_file} configuration file. Please select one \
+                              of the following: {conf_functions.keys()}")
+
+        # Get group folder and new configuration for agent.conf
+        group = configuration_values.get('group', 'default') if configuration_file == 'agent.conf' else None
+        configuration_values = (configuration_values['configuration'] if configuration_file == 'agent.conf'
+                                else configuration_values)
+
+        # Get configuration file path
+        host_configuration_file_path = self.get_file_fullpath(host, configuration_file, group)
+
+        parameters = {'new_conf': configuration_values}
+
+        # Get template for ossec.conf and agent.conf
+        if configuration_file in xml_configuration_files:
+            current_configuration = self.get_file_content(host, host_configuration_file_path, become=True)
+            parameters.update({'template': current_configuration})
+
+        # Set new configuration
+        new_configuration = conf_functions[configuration_file](**parameters)
+        self.modify_file_content(host, host_configuration_file_path, new_configuration,
+                                 not self.is_windows(host), self.is_windows(host))
+
+        self.logger.debug(f"{configuration_file} in {host} configured successfully")
 
     def configure_environment(self, configuration_hosts, parallel=True):
         """Configure multiple hosts at the same time.
         Example:
-        wazuh-agent1:
-            local_internal_options:
-                remoted.debug: 2
-                wazuh_modulesd.debug: 2
+        wazuh-manager1:
+            local_internal_options.conf:
+              remoted.debug: '2'
             ossec.conf:
-                - 'section': 'client',
-                  'elements':
-                  - 'server':
-                        'elements':
-                            - 'address':
-                                'value': 121.1.3.1
-            api.yml:
-                ....
-        wazuh-agent2:
+            - section: client
+              elements:
+              - server:
+                  elements:
+                  - address:
+                      value: 121.1.3.1
+            agent.conf:
+              group: default
+              configuration:
+              - section: client
+                elements:
+                - server:
+                    elements:
+                    - address:
+                        value: 121.1.3.1
+            api.yaml:
+              logs:
+                level: debug
+        wazuh-agent1:
             ossec.conf:
                 ...
         Args:
             configuration_host (Map): Map with new hosts configuration.
             parallel(Boolean): Enable parallel tasks.
         """
-        pass
+        self.logger.info('Configuring environment')
+        if parallel:
+            host_configuration_map = []
+            for host, configuration in configuration_hosts.items():
+                for configuration_file, configuration_values in configuration.items():
+                    host_configuration_map.append((host, configuration_file, configuration_values))
+            self.pool.starmap(self.configure_host, host_configuration_map)
+        else:
+            for host, configurations in configuration_hosts.items():
+                for configuration_file, configuration_values in configurations.items():
+                    self.configure_host(host, configuration_file, configuration_values)
+        self.logger.info('Environment configured successfully')
 
-    def change_agents_configure_manager(self, agent_list, manager, use_manager_name=True):
-        """Change configured manager of specified agent.
+    def change_agents_configured_manager(self, agent_list, manager, use_manager_name=True):
+        """Change configured manager of specified agent
 
         Args:
-            agent (str): Agent name.
+            agent_list (list): List of agents that configuration will be changed.
             manager (str): Manager name in the environment/Manager or IP.
             use_manager_name (Boolean): Replace manager name with manager IP. Default True
         """
-        pass
+        self.logger.debug('Changing configured manager')
+        if type(agent_list) != list:
+            raise TypeError('Expected a list of agents')
 
-    def backup_host_configuration(self, configuration_list):
-        """Backup specified files in.
+        new_configuration = {}
+        new_manager = manager if use_manager_name else self.get_host_ansible_ip(manager)
+
+        server_block = {'server': {'elements': [{'address': {'value': new_manager}}]}}
+        configuration = [{'section': 'client', 'elements': [server_block]}]
+
+        for agent in agent_list:
+            new_configuration[agent] = {
+                'ossec.conf': configuration
+            }
+
+        self.configure_environment(new_configuration)
+        self.logger.debug('Changed configured manager successfully')
+
+    def backup_host_configuration(self, host, file, group=None):
+        """Backup specified files in host
 
         Args:
-            configuration_list (dict): Host configuration files to backup.
+            host (str): Hostname to backup
+            file (str): File to backup
         Returns:
             dict: Host backup filepaths.
         """
+        self.logger.debug(f"Creating {file} backup on {host}")
+        backup_paths = {host: {}}
+        host_configuration_file_path = self.get_file_fullpath(host, file, group)
+        temporal_folder = DEFAULT_TEMPORAL_DIRECTORY[self.get_ansible_host_os(host)]
+        backup_file = os.path.join(temporal_folder, file + '.backup')
+        backup_paths[host][host_configuration_file_path] = backup_file
 
-    def backup_environment_configuration(self, configuration_list, parallel=True):
-        """Backup specified files in all hosts.
+        self.copy_file(host, host_configuration_file_path, backup_file, remote_src=True,
+                       become=not self.is_windows(host))
+
+        self.logger.debug(f"Created {file} backup on {host} successfully")
+        return backup_paths
+
+    def backup_environment_configuration(self, configuration_hosts, parallel=True):
+        """Backup specified files in all hosts
 
         Args:
-            configuration_list (dict): Host configuration files to backup.
+            configuration_hosts(dict): Host configuration files to backup
         Returns:
             dict: Host backup filepaths.
         """
-        pass
+        self.logger.info('Creating backup')
+        backup_configuration = []
+        if parallel:
+            host_configuration_map = []
+            for host, configuration in configuration_hosts.items():
+                for file in configuration['files']:
+                    group = configuration['group'] if file == 'agent.conf' else None
+                    host_configuration_map.append((host, file, group))
+            backup_configuration = self.pool.starmap(self.backup_host_configuration, host_configuration_map)
 
-    def restore_host_backup_configuration(self, backup_configuration):
-        """Restore backup configuration.
+        else:
+            for host, configuration in configuration_hosts.items():
+                for file in configuration['files']:
+                    group = configuration['group'] if file == 'agent.conf' else None
+                    backup_map = (self.backup_host_configuration(host, file, group))
+                    backup_configuration.append(backup_map)
+
+        final_backup_configuration = {}
+        for backup_conf_host in backup_configuration:
+            for host, file in backup_conf_host.items():
+                if host in final_backup_configuration:
+                    final_backup_configuration[host].update(file)
+                else:
+                    final_backup_configuration[host] = file
+
+        self.logger.info('Created backup successfully')
+        return final_backup_configuration
+
+    def restore_host_backup_configuration(self, host, dest_file, backup_file):
+        """Restore backup configuration
 
         Args:
-            backup_configuration (dict): Backup configuration filepaths.
+            host (str): Hostname to restore
+            dest_file (str): File to restore
         """
-        pass
+        self.logger.debug(f"Restoring {dest_file} backup on {host}")
+        self.copy_file(host=host, dest_path=dest_file,
+                       src_path=backup_file, remote_src=True, become=not self.is_windows(host))
+        self.logger.debug(f"Restored {dest_file} backup on {host} succesfully")
 
-    def restore_environment_backup_configuration(self, backup_configuration, parallel=True):
-        """Restore environment backup configuration.
+    def restore_environment_backup_configuration(self, backup_configurations, parallel=True):
+        """Restore environment backup configuration
 
         Args:
-            backup_configuration (dict): Backup configuration filepaths.
+            backup_configurations (dict): Backup configuration filepaths
         """
-        pass
+        self.logger.info('Restoring backup')
+        if parallel:
+            host_configuration_map = []
+            for host, files in backup_configurations.items():
+                for dest_file, backup_file in files.items():
+                    host_configuration_map.append((host, dest_file, backup_file))
+            self.pool.starmap(self.restore_host_backup_configuration, host_configuration_map)
+        else:
+            for host, files in backup_configurations.items():
+                for dest_file, backup_file in files.items():
+                    self.restore_host_backup_configuration(host, dest_file, backup_file)
+        self.logger.info('Restored backup successfully')
 
     def log_search(self, host, pattern, timeout, file, escape=False, output_file='log_search_output.json'):
         """Search log in specified host file
@@ -507,22 +619,15 @@ class WazuhEnvironmentHandler(HostManager):
         Returns:
             dict: Agent information.
         """
-        pass
+        return self.wazuh_api.list_agents()
 
-    def get_agent_id(self, manager, agent_name):
-        """Get agent id.
-        Args:
-            manager: Manager name (str).
-            agent_name: Agent name (str).
+    def get_agent_id(self, host):
+        """Get agents ID
+
         Returns:
-            str: Agent id.
+            str: Agent ID
         """
-        agent_ip = self.get_host_variables(agent_name).get('ip')
-        endpoint = f'/agents'
-        request = WazuhAPIRequest(endpoint=endpoint, method='GET')
-        for item in request.send(WazuhAPI(address=self.get_host_variables(manager)['ip'])).data['affected_items']:
-            if item.get('ip') == agent_ip:
-                return item.get('id')
+        return self.wazuh_api.get_agent_id(host_ip=self.get_host_ansible_ip(host))
 
     def get_agent_name_from_ip(self, agent_ip):
         """Get agent name from ip.
@@ -555,33 +660,41 @@ class WazuhEnvironmentHandler(HostManager):
                     result_id.append(item.get('id'))
         return result_id
 
-    def restart_agent(self, host):
-        """Restart agent.
+    def restart_agent(self, host, method='service'):
+        """Restart agent
 
         Args:
-            host (str): Hostname.
+            host (str): Hostname
+            method (str): Method to restart agent
         """
-        self.logger.debug(f'Restarting agent {host}')
+        self.logger.debug(f'Restarting agent {host} via {method}')
         service_name = WAZUH_AGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
         if self.is_agent(host):
-            self.control_service(host, service_name, 'restarted')
+            if method == 'service':
+                self.control_service(host, service_name, 'restarted')
+            elif method == 'api':
+                self.wazuh_api.restart_agent(self.get_agent_id(host))
             self.logger.debug(f'Agent {host} restarted successfully')
         else:
-            raise ValueError(f'Host {host} is not an agent')
+            raise ValueError(f"Host {host} is not an agent")
 
-    def restart_agents(self, agent_list=None, parallel=True):
-        """Restart list of agents.
+    def restart_agents(self, agent_list=None, method='service', parallel=True):
+        """Restart list of agents
 
         Args:
             agent_list (list, optional): Agent list. Defaults to None.
+            method (str, optional): Method to restart agents.
             parallel (bool, optional): Parallel execution. Defaults to True.
         """
-        self.logger.info(f'Restarting agents: {agent_list}')
+        self.logger.info(f'Restarting agents: {agent_list} via {method}')
         if parallel:
-            agent_restart_tasks = self.pool.map(self.restart_agent, agent_list)
+            restart_map = []
+            for agent in agent_list:
+                restart_map.append((agent, method))
+            self.pool.starmap(self.restart_agent, restart_map)
         else:
             for agent in agent_list:
-                self.restart_agent(agent)
+                self.restart_agent(agent, method)
         self.logger.info(f'Agents restarted successfully: {agent_list}')
 
     def restart_manager(self, host):
@@ -590,12 +703,12 @@ class WazuhEnvironmentHandler(HostManager):
         Args:
             host (str): Hostname.
         """
-        self.logger.debug(f'Restarting manager {host}')
+        self.logger.debug(f"Restarting manager {host}")
         if self.is_manager(host):
-            self.control_service(host, 'wazuh-manager', 'restarted')
-            self.logger.debug(f'Manager {host} restarted successfully')
+            self.control_service(host, 'wazuh-manager', 'restarted', become=True)
+            self.logger.debug(f"Manager {host} restarted successfully")
         else:
-            ValueError(f'Host {host} is not a manager')
+            ValueError(f"Host {host} is not a manager")
 
     def restart_managers(self, manager_list, parallel=True):
         """Restart managers.
@@ -604,13 +717,13 @@ class WazuhEnvironmentHandler(HostManager):
             manager_list (list): Managers list.
             parallel (bool, optional): Parallel execution. Defaults to True.
         """
-        self.logger.info(f'Restarting managers: {manager_list}')
+        self.logger.info(f"Restarting managers: {manager_list}")
         if parallel:
-            self.pool.map(self.restart_manager, manager_list)
+            self.pool.starmap(self.restart_manager, manager_list)
         else:
             for manager in manager_list:
                 self.restart_manager(manager)
-        self.logger.info(f'Managers restarted successfully: {manager_list}')
+        self.logger.info(f"Managers restarted successfully: {manager_list}")
 
     def stop_agent(self, host):
         """Stop agent.
@@ -622,9 +735,9 @@ class WazuhEnvironmentHandler(HostManager):
         service_name = WAZUH_AGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
         if self.is_agent(host):
             self.control_service(host, service_name, 'stopped')
-            self.logger.debug(f'Agent {host} stopped successfully')
+            self.logger.debug(f"Agent {host} stopped successfully")
         else:
-            raise ValueError(f'Host {host} is not an agent')
+            raise ValueError(f"Host {host} is not an agent")
 
     def stop_agents(self, agent_list=None, parallel=True):
         """Stop agents.
@@ -633,13 +746,13 @@ class WazuhEnvironmentHandler(HostManager):
             agent_list(list, optional): Agents list. Defaults to None.
             parallel (bool, optional): Parallel execution. Defaults to True.
         """
-        self.logger.info(f'Stopping agents: {agent_list}')
+        self.logger.info(f"Stopping agents: {agent_list}")
         if parallel:
-            self.pool.map(self.stop_agent, agent_list)
+            self.pool.starmap(self.stop_agent, agent_list)
         else:
             for agent in agent_list:
                 self.restart_agent(agent)
-        self.logger.info(f'Agents stopped successfully: {agent_list}')
+        self.logger.info(f"Agents stopped successfully: {agent_list}")
 
     def stop_manager(self, host):
         """Stop manager.
@@ -647,12 +760,12 @@ class WazuhEnvironmentHandler(HostManager):
         Args:
             host (str): Hostname.
         """
-        self.logger.debug(f'Stopping manager {host}')
+        self.logger.debug(f"Stopping manager {host}")
         if self.is_manager(host):
-            self.control_service(host, 'wazuh-manager', 'stopped')
-            self.logger.debug(f'Manager {host} stopped successfully')
+            self.control_service(host, 'wazuh-manager', 'stopped', become=True)
+            self.logger.debug(f"Manager {host} stopped successfully")
         else:
-            raise ValueError(f'Host {host} is not a manager')
+            raise ValueError(f"Host {host} is not a manager")
 
     def stop_managers(self, manager_list, parallel=True):
         """Stop managers.
@@ -661,13 +774,13 @@ class WazuhEnvironmentHandler(HostManager):
             manager_list (list): Managers list.
             parallel (bool, optional): Parallel execution. Defaults to True.
         """
-        self.logger.info(f'Stopping managers: {manager_list}')
+        self.logger.info(f"Stopping managers: {manager_list}")
         if parallel:
-            self.pool.map(self.stop_manager, manager_list)
+            self.pool.starmap(self.stop_manager, manager_list)
         else:
             for manager in manager_list:
                 self.restart_manager(manager)
-        self.logger.info(f'Stopping managers: {manager_list}')
+        self.logger.info(f"Stopping managers: {manager_list}")
 
     def start_agent(self, host):
         """Start agent.
@@ -679,9 +792,9 @@ class WazuhEnvironmentHandler(HostManager):
         service_name = WAZUH_AGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
         if self.is_agent(host):
             self.control_service(host, service_name, 'started')
-            self.logger.debug(f'Agent {host} started successfully')
+            self.logger.debug(f"Agent {host} started successfully")
         else:
-            raise ValueError(f'Host {host} is not an agent')
+            raise ValueError(f"Host {host} is not an agent")
 
     def start_agents(self, agent_list, parallel=True):
         """Start agents.
@@ -690,13 +803,13 @@ class WazuhEnvironmentHandler(HostManager):
             agent_list (list): Agents list.
             parallel (bool, optional): Parallel execution. Defaults to True.
         """
-        self.logger.info(f'Starting agents: {agent_list}')
+        self.logger.info(f"Starting agents: {agent_list}")
         if parallel:
-            self.pool.map(self.start_agent, agent_list)
+            self.pool.starmap(self.start_agent, agent_list)
         else:
             for agent in agent_list:
                 self.start_agent(agent)
-        self.logger.info(f'Agents started successfully: {agent_list}')
+        self.logger.info(f"Agents started successfully: {agent_list}")
 
     def start_manager(self, host):
         """Start manager.
@@ -704,12 +817,12 @@ class WazuhEnvironmentHandler(HostManager):
         Args:
             host (str): Hostname.
         """
-        self.logger.debug(f'Starting manager {host}')
+        self.logger.debug(f"Starting manager {host}")
         if self.is_manager(host):
-            self.control_service(host, 'wazuh-manager', 'started')
-            self.logger.debug(f'Manager {host} started successfully')
+            self.control_service(host, 'wazuh-manager', 'started', become=True)
+            self.logger.debug(f"Manager {host} started successfully")
         else:
-            raise ValueError(f'Host {host} is not a manager')
+            raise ValueError(f"Host {host} is not a manager")
 
     def start_managers(self, manager_list, parallel=True):
         """Start managers.
@@ -718,13 +831,13 @@ class WazuhEnvironmentHandler(HostManager):
             manager_list (list): Managers list.
             parallel (bool, optional): Parallel execution. Defaults to True.
         """
-        self.logger.info(f'Starting managers: {manager_list}')
+        self.logger.info(f"Starting managers: {manager_list}")
         if parallel:
-            self.pool.map(self.start_manager, manager_list)
+            self.pool.starmap(self.start_manager, manager_list)
         else:
             for manager in manager_list:
                 self.start_manager(manager)
-        self.logger.info(f'Managers started successfully: {manager_list}')
+        self.logger.info(f"Managers started successfully: {manager_list}")
 
     def restart_environment(self, parallel=True):
         """Restart all agents and manager in the environment.
@@ -738,10 +851,10 @@ class WazuhEnvironmentHandler(HostManager):
 
         if parallel:
             self.logger.info(message='Restarting environment: Managers')
-            self.pool.map(self.restart_manager, manager_list)
+            self.pool.starmap(self.restart_manager, manager_list)
 
             self.logger.info(message='Restarting environment: Agents')
-            self.pool.map(self.restart_agent, agent_list)
+            self.pool.starmap(self.restart_agent, agent_list)
         else:
             self.logger.info(message='Restarting environment: Managers')
             for manager in manager_list:
@@ -765,10 +878,10 @@ class WazuhEnvironmentHandler(HostManager):
 
         if parallel:
             self.logger.info(message='Stopping environment: Managers')
-            self.pool.map(self.stop_manager, manager_list)
+            self.pool.starmap(self.stop_manager, manager_list)
 
             self.logger.info(message='Stopping environment: Agents')
-            self.pool.map(self.stop_agent, agent_list)
+            self.pool.starmap(self.stop_agent, agent_list)
         else:
             self.logger.info(message='Stopping environment: Managers')
             for manager in manager_list:
@@ -792,17 +905,17 @@ class WazuhEnvironmentHandler(HostManager):
 
         if parallel:
             self.logger.info(message='Starting environment: Managers')
-            self.pool.map(self.start_manager, manager_list)
+            self.pool.starmap(self.start_manager, manager_list)
 
             self.logger.info(message='Starting environment: Agents')
-            self.pool.map(self.start_agent, agent_list)
+            self.pool.starmap(self.start_agent, agent_list)
         else:
             self.logger.info(message='Starting environment: Managers')
-            for manager in manager_list:
+            for manager in self.get_managers():
                 self.start_manager(manager)
 
             self.logger.info(message='Starting environment: Agents')
-            for agent in agent_list:
+            for agent in self.get_agents():
                 self.start_agent(agent)
 
         self.logger.info('Environment started successfully')
@@ -813,7 +926,33 @@ class WazuhEnvironmentHandler(HostManager):
         Returns:
             str: Manager master node.
         """
-        pass
+        for manager in self.get_managers():
+            if self.get_host_variables(manager)['type'] == 'master':
+                master_node = manager
+        return master_node
+
+    def get_worker_nodes(self):
+        """Get worker managers' hostnames
+
+        Returns:
+            list: Manager worker nodes
+        """
+        worker_nodes = []
+        for manager in self.get_managers():
+            if self.get_host_variables(manager)['type'] == 'worker':
+                worker_nodes.append(manager)
+        return worker_nodes
+
+    def get_node_type(self, host):
+        """Get manager type
+
+        Returns:
+            str: Manager node type
+        """
+        if self.is_manager(host):
+            return 'master' if host == self.get_master_node() else 'worker'
+        else:
+            raise ValueError(f'Host {host} is not a manager')
 
     def get_api_details(self):
         """Get api details.
@@ -1062,3 +1201,88 @@ class WazuhEnvironmentHandler(HostManager):
         else:
             for agent in self.get_agents_id(manager, list_agent_names):
                 self.unassign_agent_group(manager, agent, group_name, check_previous=check_group)
+
+    def create_rule(self, host, new_rules_filepath, rules_filename, overwrite=True):
+        """Create new rules replaces an existing rule file or adds rules to an existing file from a file.
+
+        Args:
+            host (str): Host name.
+            new_rules_filepath (str): New rules filepath.
+            rules_filename (str): Host rules filename.
+            overwrite (bool): Replace the rules. Defaults to True.
+        """
+        try:
+            with open(new_rules_filepath, 'r') as file:
+                new_rules = file.read()
+
+            files_information = self.find_files(host, os.path.dirname(rules_filename), '*')
+            file_exist = False
+            for file_information in files_information:
+                if rules_filename in file_information['path']:
+                    file_exist = True
+                    break
+
+            if file_exist:
+                if overwrite:
+                    self.logger.info(message=f'Changing {rules_filename} to {new_rules_filepath}')
+                else:
+                    current_rules = self.get_file_content(host, rules_filename)
+                    index_rule = current_rules.rfind("</rule>")
+                    if index_rule != -1:
+                        new_rules = current_rules[:index_rule] + '</rule>\n' + new_rules + '\n</group>'
+                        self.logger.info(message=f'Adding rule from {new_rules_filepath} to {rules_filename}')
+
+                self.modify_file_content(host, rules_filename, new_rules)
+                self.logger.info(message=f'Rules succefully updated')
+
+            else:
+                if overwrite:
+                    self.logger.info(message=f'{rules_filename} does not exist to be overwritten')
+                else:
+                    self.create_file(host, rules_filename, f"<group>\n{new_rules}\n</group>")
+                    self.logger.info(message=f'Rules succefully added into a new rule file named {rules_filename}')
+
+        except FileNotFoundError:
+            self.logger.error(message=f'The file {new_rules_filepath} does not exist.')
+
+    def create_decoder(self, host, new_decoder_filepath, decoder_filename, overwrite=True):
+        """Create new decoder replaces an existing decoder file or adds decoders to an existing file from a file.
+
+        Args:
+            host (str): Host name.
+            new_decoder_filepath (str): New decoder filepath.
+            decoder_filename (str): Host decoder filename.
+            overwrite (bool): Replace the decoder file. Defaults to True.
+        """
+        try:
+            with open(new_decoder_filepath, 'r') as file:
+                new_decoders = file.read()
+
+            files_information = self.find_files(host, os.path.dirname(decoder_filename), '*')
+            file_exist = False
+            for file_information in files_information:
+                if decoder_filename in file_information['path']:
+                    file_exist = True
+                    break
+
+            if file_exist:
+                if overwrite:
+                    self.logger.info(message=f'Changing {decoder_filename} to {new_decoder_filepath}')
+                else:
+                    current_decoders = self.get_file_content(host, decoder_filename)
+                    index_decoder = current_decoders.rfind("</decoder>")
+                    if index_decoder != -1:
+                        new_decoders = current_decoders[:index_decoder] + '</decoder>\n' + new_decoders
+                        self.logger.info(message=f'Adding decoder from {new_decoder_filepath} to {decoder_filename}')
+                self.modify_file_content(host, decoder_filename, new_decoders)
+                self.logger.info(message=f'Decoders succefully updated')
+
+            else:
+                if overwrite:
+                    self.logger.info(message=f'{decoder_filename} does not exist to be overwritten')
+                else:
+                    self.create_file(host, decoder_filename, new_decoders)
+                    self.logger.info(message=f'Decoders succefully added into a new file named {decoder_filename}')
+
+        except FileNotFoundError:
+            self.logger.error(message=f'The file {new_decoder_filepath} does not exist.')
