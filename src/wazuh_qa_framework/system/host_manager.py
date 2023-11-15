@@ -6,6 +6,8 @@ import tempfile
 import testinfra
 import base64
 import os
+import ansible_runner
+import yaml
 from ansible.inventory.manager import InventoryManager
 from ansible.parsing.dataloader import DataLoader
 from ansible.vars.manager import VariableManager
@@ -713,3 +715,35 @@ class HostManager:
                 raise Exception(f"Error inserting a block in file {path} on host {host}: {result}")
 
         return result
+
+    def run_playbook(self, playbook_path, extra_vars=None):
+        """Run playbook on a host.
+
+        Args:
+            playbook_path (str): Playbook path to run.
+            extra_vars (dict): Extra variables to be passed to Ansible at runtime
+
+        Returns:
+            bool: Runner result.
+
+        Raises:
+            Exception: If the playbook fails.
+        """
+        inventory_dict = yaml.safe_load(open(self.inventory_path))
+
+        try:
+            runner = ansible_runner.run(
+                playbook=playbook_path,
+                inventory=inventory_dict,
+                extravars=extra_vars,
+            )
+            if runner.status == 'failed':
+                raise Exception(f"Run playbook has status failed")
+
+            if runner.status == 'timeout':
+                raise Exception(f"The playbook execution has failed due to a tiemout")
+
+        except Exception as e:
+            raise Exception(f"Run playbook fails due to an unexpected error: {e}")
+
+        return runner

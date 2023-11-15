@@ -34,11 +34,13 @@ class WazuhAPIResponse:
         if self.status_code == HTTPStatus.METHOD_NOT_ALLOWED or self.status_code == HTTPStatus.UNAUTHORIZED:
             self.error = 1
             return self.request_response.json()['title']
+        elif self.status_code == HTTPStatus.BAD_REQUEST:
+            self.error = 1
+            return self.request_response.json()
 
         if self.status_code == HTTPStatus.OK:
             try:
                 data_container = self.request_response.json()
-
                 if 'data' in data_container:
                     self.error = data_container['error'] if 'error' in data_container else 0
                     return data_container['data']
