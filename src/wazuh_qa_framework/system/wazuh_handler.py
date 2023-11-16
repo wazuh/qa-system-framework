@@ -653,7 +653,8 @@ class WazuhEnvironmentHandler(HostManager):
             """
             endpoint = f"/agents"
             request = WazuhAPIRequest(endpoint=endpoint, method='GET')
-            agents_information = request.send(WazuhAPI(address=self.get_host_ansible_ip(manager))).data['affected_items']
+            agents_information = request.send(WazuhAPI(
+                address=self.get_host_ansible_ip(manager))).data['affected_items']
             result_id = []
             agent_ip_list = []
             for agent in agents_list:
@@ -1048,7 +1049,8 @@ class WazuhEnvironmentHandler(HostManager):
             for group in request.send(WazuhAPI(address=self.get_host_ansible_ip(manager))).data['affected_items']:
                 group_list.append(group['name'])
         else:
-            group_list = self.run_command(manager, f"{get_bin_directory_path(os_host=self.get_host_os_type(manager))}/agent_groups")
+            group_list = self.run_command(manager, f"{get_bin_directory_path(
+                os_host=self.get_host_os_type(manager))}/agent_groups")
             pattern = r'  ([^\s()]+) \(\d+\)'
             group_list = re.findall(pattern, str(group_list))
 
@@ -1180,7 +1182,7 @@ class WazuhEnvironmentHandler(HostManager):
         """
         self.logger.info(f"Assigning agents {list_agent_names} from group {group_name} from {manager}")
         if parallel:
-            self.pool.starmap(self.assign_agent_group, ((manager, agent_name, group_name, method, check_group) 
+            self.pool.starmap(self.assign_agent_group, ((manager, agent_name, group_name, method, check_group)
                                                         for agent_name in list_agent_names))
 
         else:
