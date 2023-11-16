@@ -1218,7 +1218,8 @@ class WazuhEnvironmentHandler(HostManager):
         """
 
         if parallel:
-            self.pool.starmap(self.unassign_agent_group, ((manager, agent_name, group_name, check_group) for agent_name in list_agent_names))
+            self.pool.starmap(self.unassign_agent_group, ((
+                manager, agent_name, group_name, check_group) for agent_name in list_agent_names))
         else:
             for agent in list_agent_names:
                 self.unassign_agent_group(manager, agent, group_name, check_group=check_group)
