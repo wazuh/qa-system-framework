@@ -4,6 +4,7 @@
 
 import os
 import yaml
+import re
 from multiprocessing.pool import ThreadPool
 
 from wazuh_qa_framework.generic_modules.logging.base_logger import BaseLogger
@@ -16,7 +17,8 @@ from wazuh_qa_framework.wazuh_components.api.wazuh_api_request import WazuhAPIRe
 DEFAULT_INSTALL_PATH = {
     'linux': '/var/ossec',
     'windows': 'C:/Program Files (x86)/ossec-agent',
-    'darwin': '/Library/Ossec'
+    'darwin': '/Library/Ossec',
+    'macos': '/Library/Ossec'
 }
 
 DEFAULT_TEMPORAL_DIRECTORY = {
@@ -30,9 +32,9 @@ def get_configuration_directory_path(custom_installation_path=None, os_host='lin
     return installation_path if os_host == 'windows' else os.path.join(installation_path, 'etc')
 
 
-def get_bin_directory_path(custom_installation_path=None):
-    installation_path = custom_installation_path if custom_installation_path else DEFAULT_INSTALL_PATH['linux']
-    return os.path.join(installation_path, 'bin')
+def get_bin_directory_path(custom_installation_path=None, os_host='linux'):
+    installation_path = custom_installation_path if custom_installation_path else DEFAULT_INSTALL_PATH[os_host]
+    return installation_path if os_host == 'windows' else os.path.join(installation_path, 'bin')
 
 
 def get_custom_decoders_directory_path(custom_installation_path=None):
@@ -634,31 +636,34 @@ class WazuhEnvironmentHandler(HostManager):
         Args:
             agent_ip: Agent ip (str).
         Returns:
-            str: Agent ip (str).
+            str: Agent name (str).
         """
         list_of_hosts = self.get_group_hosts()
         for host in list_of_hosts:
-            if self.get_host_variables(host).get('ip') == agent_ip:
+            if self.get_host_ansible_ip(host) == agent_ip:
                 return self.get_host_variables(host).get('inventory_hostname_short')
 
-    def get_agents_id(self, manager, agents_list=None):
-        """Get agents id.
-        Args:
-            manager: Manager name (str).
-            agents_list: Agents list (list).
-        Returns:
-            List: Agents id (list).
-        """
-        result_id = []
-        for agent in agents_list:
-            agent_ip = self.get_host_variables(agent).get('ip')
-            endpoint = f'/agents'
+    def get_agents_id(self, manager, agents_list):
+            """Get agents id.
+            Args:
+                manager: Manager name (str).
+                agents_list: Agents list (list).
+            Returns:
+                List: Agents id (list).
+            """
+            endpoint = f"/agents"
             request = WazuhAPIRequest(endpoint=endpoint, method='GET')
-            items = request.send(WazuhAPI(address=self.get_host_variables(manager)['ip'])).data['affected_items']
-            for item in items:
-                if item.get('ip') == agent_ip:
-                    result_id.append(item.get('id'))
-        return result_id
+            agents_information = request.send(WazuhAPI(address=self.get_host_ansible_ip(manager))).data['affected_items']
+            result_id = []
+            agent_ip_list = []
+            for agent in agents_list:
+                agent_ip = self.get_host_ansible_ip(agent)
+                agent_ip_list.append(agent_ip)
+            for information in agents_information:
+                for agent_ip in agent_ip_list:
+                    if information.get('ip') == agent_ip:
+                        result_id.append(information.get('id'))
+            return result_id
 
     def restart_agent(self, host, method='service'):
         """Restart agent
@@ -667,14 +672,14 @@ class WazuhEnvironmentHandler(HostManager):
             host (str): Hostname
             method (str): Method to restart agent
         """
-        self.logger.debug(f'Restarting agent {host} via {method}')
+        self.logger.debug(f"Restarting agent {host} via {method}")
         service_name = WAZUH_AGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
         if self.is_agent(host):
             if method == 'service':
                 self.control_service(host, service_name, 'restarted')
             elif method == 'api':
                 self.wazuh_api.restart_agent(self.get_agent_id(host))
-            self.logger.debug(f'Agent {host} restarted successfully')
+            self.logger.debug(f"Agent {host} restarted successfully")
         else:
             raise ValueError(f"Host {host} is not an agent")
 
@@ -686,7 +691,7 @@ class WazuhEnvironmentHandler(HostManager):
             method (str, optional): Method to restart agents.
             parallel (bool, optional): Parallel execution. Defaults to True.
         """
-        self.logger.info(f'Restarting agents: {agent_list} via {method}')
+        self.logger.info(f"Restarting agents: {agent_list} via {method}")
         if parallel:
             restart_map = []
             for agent in agent_list:
@@ -695,7 +700,7 @@ class WazuhEnvironmentHandler(HostManager):
         else:
             for agent in agent_list:
                 self.restart_agent(agent, method)
-        self.logger.info(f'Agents restarted successfully: {agent_list}')
+        self.logger.info(f"Agents restarted successfully: {agent_list}")
 
     def restart_manager(self, host):
         """Restart manager.
@@ -731,7 +736,7 @@ class WazuhEnvironmentHandler(HostManager):
         Args:
             host (str): Hostname.
         """
-        self.logger.debug(f'Stopping agent {host}')
+        self.logger.debug(f"Stopping agent {host}")
         service_name = WAZUH_AGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
         if self.is_agent(host):
             self.control_service(host, service_name, 'stopped')
@@ -788,7 +793,7 @@ class WazuhEnvironmentHandler(HostManager):
         Args:
             host (str): Hostname.
         """
-        self.logger.debug(f'Starting agent {host}')
+        self.logger.debug(f"Starting agent {host}")
         service_name = WAZUH_AGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
         if self.is_agent(host):
             self.control_service(host, service_name, 'started')
@@ -952,7 +957,7 @@ class WazuhEnvironmentHandler(HostManager):
         if self.is_manager(host):
             return 'master' if host == self.get_master_node() else 'worker'
         else:
-            raise ValueError(f'Host {host} is not a manager')
+            raise ValueError(f"Host {host} is not a manager")
 
     def get_api_details(self):
         """Get api details.
@@ -1032,18 +1037,21 @@ class WazuhEnvironmentHandler(HostManager):
         Args:
             manager (str): Name of the manager.
             method (str): Method to be used to get information. Defaults to api.
+        Returns:
+            List: List of groups.
         """
         group_list = []
-        self.logger.info(f'Requesting group list info using {method.upper()}')
+        self.logger.info(f"Requesting group list info using {method.upper()}")
         if method == 'api':
-            endpoint = f'/groups'
+            endpoint = '/groups'
             request = WazuhAPIRequest(endpoint=endpoint, method='GET')
-            for item in request.send(WazuhAPI(address=self.get_host_variables(manager)['ip'])).data['affected_items']:
-                group_list.append(item['name'])
+            for group in request.send(WazuhAPI(address=self.get_host_ansible_ip(manager))).data['affected_items']:
+                group_list.append(group['name'])
         else:
-            group_list = self.run_command(manager, f'{get_bin_directory_path()}/agent_groups')
+            group_list = self.run_command(manager, f"{get_bin_directory_path(os_host=self.get_host_os_type(manager))}/agent_groups")
             pattern = r'  ([^\s()]+) \(\d+\)'
             group_list = re.findall(pattern, str(group_list))
+
         return group_list
 
     def get_agents_names_in_group(self, manager, group_name):
@@ -1051,21 +1059,23 @@ class WazuhEnvironmentHandler(HostManager):
         Args:
             manager (str): Name of the manager.
             group_name (str): Name of group.
+        Returns:
+            List: List of agent names in the group.
         """
         agent_ip_list = []
         agent_list = []
-        self.logger.info(f'Requesting agent info using API')
-        endpoint = f'/groups/{group_name}/agents'
+        self.logger.info(f"Requesting agent info using API")
+        endpoint = f"/groups/{group_name}/agents"
         request = WazuhAPIRequest(endpoint=endpoint, method='GET')
         try:
-            for item in request.send(WazuhAPI(address=self.get_host_variables(manager)['ip'])).data['affected_items']:
+            for item in request.send(WazuhAPI(address=self.get_host_ansible_ip(manager))).data['affected_items']:
                 agent_ip_list.append(item['ip'])
             for agent in self.get_agents():
-                if self.get_host_variables(agent).get('ip') in agent_ip_list:
+                if self.get_host_ansible_ip(agent) in agent_ip_list:
                     agent_list.append(agent)
             return agent_list
         except TypeError:
-            self.logger.info(f'No agents were found in the group {group_name}')
+            self.logger.info(f"No agents were found in the group {group_name}")
             return agent_list
 
     def check_group(self, manager, group_name, method='api'):
@@ -1074,8 +1084,10 @@ class WazuhEnvironmentHandler(HostManager):
             manager (str): Name of the manager.
             group_name (str): Name of the group.
             method (str): Method to be used to check. Defaults to api.
+        Returns:
+            boolean : True or False.
         """
-        return True if group_name in self.get_group_list(manager, method) else False
+        return group_name in self.get_group_list(manager, method)
 
     def check_agent_group(self, manager, agent_name, group_name):
         """Check the existence of an agent in a group.
@@ -1083,8 +1095,11 @@ class WazuhEnvironmentHandler(HostManager):
             manager (str): Name of the manager.
             agent_name (str): Name of agent.
             group_name (str): Name of the group.
+        Returns:
+            boolean : True or False.
         """
-        return True if agent_name in self.get_agents_names_in_group(manager, group_name) else False
+            
+        return agent_name in self.get_agents_names_in_group(manager, group_name)
 
     def create_group(self, manager, group_name, method='api', check_group=True):
         """Create a group.
@@ -1095,15 +1110,16 @@ class WazuhEnvironmentHandler(HostManager):
             check_group (str): Check if the agent is already assigned to the group.
         """
         if check_group and self.check_group(manager, group_name):
-            self.logger.info(f'{group_name} already exists')
+            self.logger.info(f"{group_name} already exists")
         else:
-            self.logger.info(f'Creating group {group_name} from {manager} using {method.upper()}')
+            self.logger.info(f"Creating group {group_name} from {manager} using {method.upper()}")
             if method == 'cmd':
-                self.run_command(manager, f'{get_bin_directory_path()}/agent_groups -q -a -g {group_name}')
+                self.run_command(manager, f"{get_bin_directory_path(
+                    os_host=self.get_host_os_type(manager))}/agent_groups -q -a -g {group_name}")
             elif method == 'api':
                 endpoint = '/groups'
                 request = WazuhAPIRequest(endpoint=endpoint, payload={'group_id': group_name}, method='POST')
-                request.send(WazuhAPI(address=self.get_host_variables(manager)['ip']))
+                request.send(WazuhAPI(address=self.get_host_ansible_ip(manager)))
 
     def delete_group(self, manager, group_name, method='cmd', check_group=True):
         """Delete a group.
@@ -1114,19 +1130,20 @@ class WazuhEnvironmentHandler(HostManager):
             check_group (str): Check if the agent is already assigned to the group.
         """
         if check_group and not self.check_group(manager, group_name):
-            self.logger.info(f'{group_name} does not exists')
+            self.logger.info(f"{group_name} does not exists")
         else:
-            self.logger.info(f'Removing group {group_name} from {manager} using {method.upper()} method')
+            self.logger.info(f"Removing group {group_name} from {manager} using {method.upper()} method")
             if method == 'cmd':
-                self.run_command(manager, f'{get_bin_directory_path()}/agent_groups -q -r -g {group_name}')
+                self.run_command(manager, f"{get_bin_directory_path(
+                    os_host=self.get_host_os_type(manager))}/agent_groups -q -r -g {group_name}")
 
-            if method == 'api':
-                endpoint = f'/groups?groups_list={group_name}'
+            elif method == 'api':
+                endpoint = f"/groups?groups_list={group_name}"
                 request = WazuhAPIRequest(endpoint=endpoint, method='DELETE')
-                request.send(WazuhAPI(address=self.get_host_variables(manager)['ip']))
+                request.send(WazuhAPI(address=self.get_host_ansible_ip(manager)))
 
             if method == 'folder':
-                self.run_command(manager, f'rm -rf {get_shared_directory_path()}/{group_name}')
+                self.run_command(manager, f"rm -rf {get_shared_directory_path()}/{group_name}")
 
     def assign_agent_group(self, manager, agent_name, group_name, method='api', check_group=True):
         """Assign an agent to a group.
@@ -1138,17 +1155,18 @@ class WazuhEnvironmentHandler(HostManager):
             check_group (str): Check if the agent is already assigned to the group.
         """
         if check_group and self.check_agent_group(manager, agent_name, group_name):
-            self.logger.info(f'{agent_name} is already assigned to {group_name}')
+            self.logger.info(f"{agent_name} is already assigned to {group_name}")
         else:
-            self.logger.info(f'Assign agent {agent_name} to group {group_name} from {manager} using {method.upper()}')
+            self.logger.info(f"Assign agent {agent_name} to group {group_name} from {manager} using {method.upper()}")
             if method == 'cmd':
-                self.run_command(manager, (f'{get_bin_directory_path()}/agent_groups -q -a '
-                                           f'-i {self.get_agent_id(agent_name)} -g {group_name}'))
+                self.run_command(manager, (f"{get_bin_directory_path(
+                    os_host=self.get_host_os_type(manager))}/agent_groups -q -a " f"-i {self.get_agent_id(
+                        agent_name)} -g {group_name}"))
 
-            if method == 'api':
-                endpoint = f'/agents/{self.get_agent_id(agent_name)}/group/{group_name}'
+            elif method == 'api':
+                endpoint = f"/agents/{self.get_agent_id(agent_name)}/group/{group_name}"
                 request = WazuhAPIRequest(endpoint=endpoint, method='PUT')
-                request.send(WazuhAPI(address=self.get_host_variables(manager)['ip']))
+                request.send(WazuhAPI(address=self.get_host_ansible_ip(manager)))
 
     def assign_agents_group(self, manager, list_agent_names, group_name, method='api', check_group=True, parallel=True):
         """Function to assign list of agents to a group.
@@ -1160,12 +1178,13 @@ class WazuhEnvironmentHandler(HostManager):
             check_group (str): Check if the agent is already assigned to the group.
             parallel (bool, optional): Parallel execution. Defaults to True.
         """
+        self.logger.info(f"Assigning agents {list_agent_names} from group {group_name} from {manager}")
         if parallel:
-            self.pool.map(lambda agent: self.assign_agent_group(manager, agent, group_name, method=method,
-                                                                check_group=check_group), list_agent_names)
+            self.pool.starmap(self.assign_agent_group, ((manager, agent_name, group_name, method, check_group) 
+                                                        for agent_name in list_agent_names))
+
         else:
             for agent in list_agent_names:
-                self.logger.info(f'Assigning agent {agent} from group {group_name} from {manager}')
                 self.assign_agent_group(manager, agent, group_name, method=method, check_group=check_group)
 
     def unassign_agent_group(self, manager, agent_name, group_name, check_group=True):
@@ -1176,14 +1195,15 @@ class WazuhEnvironmentHandler(HostManager):
             group_name (str): Name of the group.
             check_group (str): Check if the agent is already assigned to the group.
         """
-        self.logger.info(f'Removing agent {agent_name} from group {group_name} using API')
+        self.logger.info(f"Removing agent {agent_name} from group {group_name} using API")
 
         if check_group and not self.check_agent_group(manager, agent_name, group_name):
-            self.logger.info(f'{agent_name} is not assigned to {group_name}')
+            self.logger.info(f"{agent_name} is not assigned to {group_name}")
+
         else:
-            endpoint = f'/agents/{self.get_agent_id(agent_name)}/group/{group_name}'
+            endpoint = f"/agents/{self.get_agent_id(agent_name)}/group/{group_name}"
             request = WazuhAPIRequest(endpoint=endpoint, method='DELETE')
-            request.send(WazuhAPI(address=self.get_host_variables(manager)['ip']))
+            request.send(WazuhAPI(address=self.get_host_ansible_ip(manager)))
 
     def unassign_agents_group(self, manager, list_agent_names, group_name, check_group=True, parallel=True):
         """Function to unassign list of agents to a group.
@@ -1194,13 +1214,12 @@ class WazuhEnvironmentHandler(HostManager):
             check_group (boo, optional): Check if the agent is already assigned to the group.
             parallel (bool, optional): Parallel execution. Defaults to True.
         """
-        if parallel:
-            self.pool.map(lambda agent: self.unassign_agent_group(manager, agent, group_name, check_group=check_group),
-                          list_agent_names)
 
+        if parallel:
+            self.pool.starmap(self.unassign_agent_group, ((manager, agent_name, group_name, check_group) for agent_name in list_agent_names))
         else:
-            for agent in self.get_agents_id(manager, list_agent_names):
-                self.unassign_agent_group(manager, agent, group_name, check_previous=check_group)
+            for agent in list_agent_names:
+                self.unassign_agent_group(manager, agent, group_name, check_group=check_group)
 
     def create_rule(self, host, new_rules_filepath, rules_filename, overwrite=True):
         """Create new rules replaces an existing rule file or adds rules to an existing file from a file.
@@ -1224,26 +1243,26 @@ class WazuhEnvironmentHandler(HostManager):
 
             if file_exist:
                 if overwrite:
-                    self.logger.info(message=f'Changing {rules_filename} to {new_rules_filepath}')
+                    self.logger.info(message=f"Changing {rules_filename} to {new_rules_filepath}")
                 else:
                     current_rules = self.get_file_content(host, rules_filename)
                     index_rule = current_rules.rfind("</rule>")
                     if index_rule != -1:
                         new_rules = current_rules[:index_rule] + '</rule>\n' + new_rules + '\n</group>'
-                        self.logger.info(message=f'Adding rule from {new_rules_filepath} to {rules_filename}')
+                        self.logger.info(message=f"Adding rule from {new_rules_filepath} to {rules_filename}")
 
                 self.modify_file_content(host, rules_filename, new_rules)
-                self.logger.info(message=f'Rules succefully updated')
+                self.logger.info(message=f"Rules succefully updated")
 
             else:
                 if overwrite:
-                    self.logger.info(message=f'{rules_filename} does not exist to be overwritten')
+                    self.logger.info(message=f"{rules_filename} does not exist to be overwritten")
                 else:
                     self.create_file(host, rules_filename, f"<group>\n{new_rules}\n</group>")
-                    self.logger.info(message=f'Rules succefully added into a new rule file named {rules_filename}')
+                    self.logger.info(message=f"Rules succefully added into a new rule file named {rules_filename}")
 
         except FileNotFoundError:
-            self.logger.error(message=f'The file {new_rules_filepath} does not exist.')
+            self.logger.error(message=f"The file {new_rules_filepath} does not exist.")
 
     def create_decoder(self, host, new_decoder_filepath, decoder_filename, overwrite=True):
         """Create new decoder replaces an existing decoder file or adds decoders to an existing file from a file.
@@ -1267,22 +1286,22 @@ class WazuhEnvironmentHandler(HostManager):
 
             if file_exist:
                 if overwrite:
-                    self.logger.info(message=f'Changing {decoder_filename} to {new_decoder_filepath}')
+                    self.logger.info(message=f"Changing {decoder_filename} to {new_decoder_filepath}")
                 else:
                     current_decoders = self.get_file_content(host, decoder_filename)
                     index_decoder = current_decoders.rfind("</decoder>")
                     if index_decoder != -1:
                         new_decoders = current_decoders[:index_decoder] + '</decoder>\n' + new_decoders
-                        self.logger.info(message=f'Adding decoder from {new_decoder_filepath} to {decoder_filename}')
+                        self.logger.info(message=f"Adding decoder from {new_decoder_filepath} to {decoder_filename}")
                 self.modify_file_content(host, decoder_filename, new_decoders)
-                self.logger.info(message=f'Decoders succefully updated')
+                self.logger.info(message=f"Decoders succefully updated")
 
             else:
                 if overwrite:
-                    self.logger.info(message=f'{decoder_filename} does not exist to be overwritten')
+                    self.logger.info(message=f"{decoder_filename} does not exist to be overwritten")
                 else:
                     self.create_file(host, decoder_filename, new_decoders)
-                    self.logger.info(message=f'Decoders succefully added into a new file named {decoder_filename}')
+                    self.logger.info(message=f"Decoders succefully added into a new file named {decoder_filename}")
 
         except FileNotFoundError:
-            self.logger.error(message=f'The file {new_decoder_filepath} does not exist.')
+            self.logger.error(message=f"The file {new_decoder_filepath} does not exist.")
