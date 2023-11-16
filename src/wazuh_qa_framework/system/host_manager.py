@@ -643,9 +643,9 @@ class HostManager:
         """
         try:
             if self.is_windows(host):
-                self.run_command(host, f'taskkill /F /IM {process}')
+                self.run_command(host, f"taskkill /F /IM {process}")
             else:
-                self.run_command(host, f'pkill -9 {process}')
+                self.run_command(host, f"pkill -9 {process}")
 
         except Exception as e:
             raise Exception(f"An error occurred while stopping the process. {e}")

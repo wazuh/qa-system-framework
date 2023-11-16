@@ -707,7 +707,7 @@ class WazuhEnvironmentHandler(HostManager):
 
             else:
                 self.control_service(host, service_name, 'stopped')
-            self.logger.info(f'Agent {host} stopped {type}')
+            self.logger.info(f"Agent {host} stopped {type}")
 
         else:
             raise ValueError(f"Host {host} is not an agent")
@@ -721,8 +721,7 @@ class WazuhEnvironmentHandler(HostManager):
             gracefully (bool): Stop gracefully. Defaults to True.
         """
         if parallel:
-            stop_agent_with_type = partial(self.stop_agent, gracefully=gracefully)
-            self.pool.map(stop_agent_with_type, agent_list)
+            self.pool.starmap(self.stop_agent, [(agent, gracefully) for agent in agent_list])
         else:
             for agent in agent_list:
                 self.stop_agent(agent, gracefully)
