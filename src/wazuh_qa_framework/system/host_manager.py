@@ -109,8 +109,6 @@ class HostManager:
         """
         return self.get_host_variables(host).get('os_name')
 
-        return testinfra_host.ansible("setup")
-
     def collect_host_os(self, host):
         """Get the OS of the specified host.
 
