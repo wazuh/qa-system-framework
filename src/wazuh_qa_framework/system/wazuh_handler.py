@@ -17,7 +17,6 @@ from wazuh_qa_framework.wazuh_components.api.wazuh_api_request import WazuhAPIRe
 DEFAULT_INSTALL_PATH = {
     'linux': '/var/ossec',
     'windows': 'C:/Program Files (x86)/ossec-agent',
-    'darwin': '/Library/Ossec',
     'macos': '/Library/Ossec'
 }
 
@@ -631,40 +630,19 @@ class WazuhEnvironmentHandler(HostManager):
         """
         return self.wazuh_api.get_agent_id(host_ip=self.get_host_ansible_ip(host))
 
-    def get_agent_name_from_ip(self, agent_ip):
-        """Get agent name from ip.
-        Args:
-            agent_ip: Agent ip (str).
-        Returns:
-            str: Agent name (str).
-        """
-        list_of_hosts = self.get_group_hosts()
-        for host in list_of_hosts:
-            if self.get_host_ansible_ip(host) == agent_ip:
-                return self.get_host_variables(host).get('inventory_hostname_short')
+    def get_agents_id(self, hosts_list):
+            """Get agents IDs list.
 
-    def get_agents_id(self, manager, agents_list):
-            """Get agents id.
             Args:
-                manager: Manager name (str).
-                agents_list: Agents list (list).
+                hosts_list: Host name list (list).
+
             Returns:
-                List: Agents id (list).
+                List: Host IDs (list).
             """
-            endpoint = f"/agents"
-            request = WazuhAPIRequest(endpoint=endpoint, method='GET')
-            agents_information = request.send(WazuhAPI(
-                address=self.get_host_ansible_ip(manager))).data['affected_items']
-            result_id = []
-            agent_ip_list = []
-            for agent in agents_list:
-                agent_ip = self.get_host_ansible_ip(agent)
-                agent_ip_list.append(agent_ip)
-            for information in agents_information:
-                for agent_ip in agent_ip_list:
-                    if information.get('ip') == agent_ip:
-                        result_id.append(information.get('id'))
-            return result_id
+            hosts_ip_list = []
+            for host in hosts_list:
+                hosts_ip_list.append(self.get_host_ansible_ip(host))
+            return self.wazuh_api.get_agents_id(host_ip_list=hosts_ip_list)
 
     def restart_agent(self, host, method='service'):
         """Restart agent
@@ -1018,6 +996,7 @@ class WazuhEnvironmentHandler(HostManager):
 
         Args:
             host (str): Hostname.
+
         Returns:
             bool: True if host is agent.
         """
@@ -1028,6 +1007,7 @@ class WazuhEnvironmentHandler(HostManager):
 
         Args:
             host (str): Hostname.
+
         Returns:
             bool: True if host is manager.
         """
@@ -1035,9 +1015,11 @@ class WazuhEnvironmentHandler(HostManager):
 
     def get_group_list(self, manager, method='api'):
         """Get list of groups.
+
         Args:
             manager (str): Name of the manager.
             method (str): Method to be used to get information. Defaults to api.
+
         Returns:
             List: List of groups.
         """
@@ -1049,8 +1031,7 @@ class WazuhEnvironmentHandler(HostManager):
             for group in request.send(WazuhAPI(address=self.get_host_ansible_ip(manager))).data['affected_items']:
                 group_list.append(group['name'])
         else:
-            group_list = self.run_command(manager, f"{get_bin_directory_path(
-                os_host=self.get_host_os_type(manager))}/agent_groups")
+            group_list = self.run_command(manager, f"{get_bin_directory_path(os_host=self.get_host_os_type(manager))}/agent_groups")
             pattern = r'  ([^\s()]+) \(\d+\)'
             group_list = re.findall(pattern, str(group_list))
 
@@ -1058,9 +1039,11 @@ class WazuhEnvironmentHandler(HostManager):
 
     def get_agents_names_in_group(self, manager, group_name):
         """Get list of agents in a specific group.
+
         Args:
             manager (str): Name of the manager.
             group_name (str): Name of group.
+
         Returns:
             List: List of agent names in the group.
         """
@@ -1082,10 +1065,12 @@ class WazuhEnvironmentHandler(HostManager):
 
     def check_group(self, manager, group_name, method='api'):
         """Check the existence of a group.
+
         Args:
             manager (str): Name of the manager.
             group_name (str): Name of the group.
             method (str): Method to be used to check. Defaults to api.
+
         Returns:
             boolean : True or False.
         """
@@ -1093,10 +1078,12 @@ class WazuhEnvironmentHandler(HostManager):
 
     def check_agent_group(self, manager, agent_name, group_name):
         """Check the existence of an agent in a group.
+
         Args:
             manager (str): Name of the manager.
             agent_name (str): Name of agent.
             group_name (str): Name of the group.
+
         Returns:
             boolean : True or False.
         """
@@ -1105,6 +1092,7 @@ class WazuhEnvironmentHandler(HostManager):
 
     def create_group(self, manager, group_name, method='api', check_group=True):
         """Create a group.
+
         Args:
             manager (str): Name of the manager.
             group_name (str): Name of the group.
@@ -1116,8 +1104,7 @@ class WazuhEnvironmentHandler(HostManager):
         else:
             self.logger.info(f"Creating group {group_name} from {manager} using {method.upper()}")
             if method == 'cmd':
-                self.run_command(manager, f"{get_bin_directory_path(
-                    os_host=self.get_host_os_type(manager))}/agent_groups -q -a -g {group_name}")
+                self.run_command(manager, f"{get_bin_directory_path(os_host=self.get_host_os_type(manager))}/agent_groups -q -a -g {group_name}")
             elif method == 'api':
                 endpoint = '/groups'
                 request = WazuhAPIRequest(endpoint=endpoint, payload={'group_id': group_name}, method='POST')
@@ -1125,6 +1112,7 @@ class WazuhEnvironmentHandler(HostManager):
 
     def delete_group(self, manager, group_name, method='cmd', check_group=True):
         """Delete a group.
+
         Args:
             manager (str): Name of the manager.
             group_name (str): Name of the group.
@@ -1136,8 +1124,7 @@ class WazuhEnvironmentHandler(HostManager):
         else:
             self.logger.info(f"Removing group {group_name} from {manager} using {method.upper()} method")
             if method == 'cmd':
-                self.run_command(manager, f"{get_bin_directory_path(
-                    os_host=self.get_host_os_type(manager))}/agent_groups -q -r -g {group_name}")
+                self.run_command(manager, f"{get_bin_directory_path(os_host=self.get_host_os_type(manager))}/agent_groups -q -r -g {group_name}")
 
             elif method == 'api':
                 endpoint = f"/groups?groups_list={group_name}"
@@ -1149,6 +1136,7 @@ class WazuhEnvironmentHandler(HostManager):
 
     def assign_agent_group(self, manager, agent_name, group_name, method='api', check_group=True):
         """Assign an agent to a group.
+
         Args:
             manager (str): Name of the manager.
             agent_name (str): Name of the agent.
@@ -1161,9 +1149,7 @@ class WazuhEnvironmentHandler(HostManager):
         else:
             self.logger.info(f"Assign agent {agent_name} to group {group_name} from {manager} using {method.upper()}")
             if method == 'cmd':
-                self.run_command(manager, (f"{get_bin_directory_path(
-                    os_host=self.get_host_os_type(manager))}/agent_groups -q -a " f"-i {self.get_agent_id(
-                        agent_name)} -g {group_name}"))
+                self.run_command(manager, (f"{get_bin_directory_path(os_host=self.get_host_os_type(manager))}/agent_groups -q -a " f"-i {self.get_agent_id(agent_name)} -g {group_name}"))
 
             elif method == 'api':
                 endpoint = f"/agents/{self.get_agent_id(agent_name)}/group/{group_name}"
@@ -1172,6 +1158,7 @@ class WazuhEnvironmentHandler(HostManager):
 
     def assign_agents_group(self, manager, list_agent_names, group_name, method='api', check_group=True, parallel=True):
         """Function to assign list of agents to a group.
+
         Args:
             manager (str): Name of the manager.
             list_agent_names (list): List of the agents names.
@@ -1191,6 +1178,7 @@ class WazuhEnvironmentHandler(HostManager):
 
     def unassign_agent_group(self, manager, agent_name, group_name, check_group=True):
         """Function to unassign an agent to a group.
+
         Args:
             manager (str): Name of the manager.
             agent_name (str): Name of the agent.
@@ -1209,6 +1197,7 @@ class WazuhEnvironmentHandler(HostManager):
 
     def unassign_agents_group(self, manager, list_agent_names, group_name, check_group=True, parallel=True):
         """Function to unassign list of agents to a group.
+
         Args:
             manager (str): Name of the manager.
             list_agent_names (list): List of the agents names.
