@@ -657,6 +657,24 @@ class HostManager:
 
         return result
 
+    def stop_ungracefully_process(self, host, process, become=None):
+        """Stop ungracefully a process.
+
+        Args:
+            host (str): Hostname.
+            process (str): Name of the process to be stopped.
+            become (bool): If no value is provided, it will be taken from the inventory. If the inventory does not
+            provide a value, it will default to False. Defaults None
+        """
+        try:
+            if self.is_windows(host):
+                self.run_command(host, f"taskkill /F /IM {process}", become=become)
+            else:
+                self.run_command(host, f"pkill -9 {process}", become=become)
+
+        except Exception as e:
+            raise Exception(f"An error occurred while stopping the process. {e}")
+
     def uninstall_package(self, host, package_name, become=None, ignore_errors=False):
         """Uninstall a package on a host.
 
@@ -720,6 +738,39 @@ class HostManager:
 
             if not result.get('msg', 'Block inserted') and not ignore_errors:
                 raise Exception(f"Error inserting a block in file {path} on host {host}: {result}")
+
+        return result
+
+    def run_python_script(self, host, script, become=None, ignore_errors=False):
+        """Run a python script on a host.
+
+        Args:
+            host (str): Hostname
+            script (str): Script name or path
+            become (bool): If no value is provided, it will be taken from the inventory. If the inventory does not
+            provide a value, it will default to False. Defaults None
+            ignore_errors (bool, optional): Ignore errors. Defaults to False.
+
+        Returns:
+            dict: Python script result
+
+        Raises:
+            Exception: If the Python script cannot be run
+        """
+        testinfra_host = self.get_host(host)
+        ansible_command = 'script'
+
+        if self.is_windows(host):
+            ansible_arguments = f"'{script} executable=python'"
+            result = testinfra_host.ansible(ansible_command, ansible_arguments, check=False)
+        else:
+            become = self.get_host_variables(host).get('become', False) if become is None else become
+            ansible_arguments = f"'{script}'"
+            result = testinfra_host.ansible(ansible_command, ansible_arguments, check=False, become=become)
+
+        rc = result.get('rc')
+        if rc != 0 and not ignore_errors:
+            raise Exception(f"Error running python script {script} on host {host}: {result}")
 
         return result
 

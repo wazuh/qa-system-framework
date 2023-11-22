@@ -3,6 +3,7 @@
 # This program is free software; you can redistribute it and/or modify it under the terms of GPLv2
 
 import os
+import re
 import yaml
 import re
 from multiprocessing.pool import ThreadPool
@@ -709,34 +710,43 @@ class WazuhEnvironmentHandler(HostManager):
                 self.restart_manager(manager)
         self.logger.info(f"Managers restarted successfully: {manager_list}")
 
-    def stop_agent(self, host):
+    def stop_agent(self, host, gracefully=True):
         """Stop agent.
 
         Args:
             host (str): Hostname.
+            gracefully (bool): Stop gracefully. Defaults to True.
         """
-        self.logger.debug(f"Stopping agent {host}")
+        type = 'gracefully' if gracefully else 'ungracefully'
+        self.logger.debug(f'Stopping {type} {host}')
         service_name = WAZUH_AGENT_WINDOWS_SERVICE_NAME if self.is_windows(host) else 'wazuh-agent'
         if self.is_agent(host):
-            self.control_service(host, service_name, 'stopped')
-            self.logger.debug(f"Agent {host} stopped successfully")
+            if not gracefully:
+                process = 'wazuh-agent.exe' if self.is_windows(host) else 'wazuh-agent'
+                self.stop_ungracefully_process(host, process)
+
+            else:
+                self.control_service(host, service_name, 'stopped')
+            self.logger.info(f"Agent {host} stopped {type}")
+
         else:
             raise ValueError(f"Host {host} is not an agent")
 
-    def stop_agents(self, agent_list=None, parallel=True):
+
+    def stop_agents(self, agent_list=None, parallel=True, gracefully=True):
         """Stop agents.
 
         Args:
-            agent_list(list, optional): Agents list. Defaults to None.
+            agent_list (list, optional): Agents list. Defaults to None.
             parallel (bool, optional): Parallel execution. Defaults to True.
+            gracefully (bool): Stop gracefully. Defaults to True.
         """
-        self.logger.info(f"Stopping agents: {agent_list}")
         if parallel:
-            self.pool.starmap(self.stop_agent, agent_list)
+            self.pool.starmap(self.stop_agent, [(agent, gracefully) for agent in agent_list])
         else:
             for agent in agent_list:
-                self.restart_agent(agent)
-        self.logger.info(f"Agents stopped successfully: {agent_list}")
+                self.stop_agent(agent, gracefully)
+        self.logger.info(f'Agents stopped successfully: {agent_list}')
 
     def stop_manager(self, host):
         """Stop manager.
@@ -895,11 +905,11 @@ class WazuhEnvironmentHandler(HostManager):
             self.pool.starmap(self.start_agent, agent_list)
         else:
             self.logger.info(message='Starting environment: Managers')
-            for manager in self.get_managers():
+            for manager in manager_list:
                 self.start_manager(manager)
 
             self.logger.info(message='Starting environment: Agents')
-            for agent in self.get_agents():
+            for agent in agent_list:
                 self.start_agent(agent)
 
         self.logger.info('Environment started successfully')
