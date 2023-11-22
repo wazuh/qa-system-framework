@@ -634,6 +634,24 @@ class HostManager:
 
         return result
 
+    def stop_ungracefully_process(self, host, process, become=None):
+        """Stop ungracefully a process.
+
+        Args:
+            host (str): Hostname.
+            process (str): Name of the process to be stopped.
+            become (bool): If no value is provided, it will be taken from the inventory. If the inventory does not
+            provide a value, it will default to False. Defaults None
+        """
+        try:
+            if self.is_windows(host):
+                self.run_command(host, f"taskkill /F /IM {process}", become=become)
+            else:
+                self.run_command(host, f"pkill -9 {process}", become=become)
+
+        except Exception as e:
+            raise Exception(f"An error occurred while stopping the process. {e}")
+
     def uninstall_package(self, host, package_name, become=None, ignore_errors=False):
         """Uninstall a package on a host.
 
