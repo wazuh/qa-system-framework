@@ -5,7 +5,6 @@
 import os
 import re
 import yaml
-from functools import partial
 from multiprocessing.pool import ThreadPool
 
 from wazuh_qa_framework.generic_modules.logging.base_logger import BaseLogger
