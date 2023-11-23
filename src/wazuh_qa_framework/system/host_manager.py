@@ -98,6 +98,17 @@ class HostManager:
 
         return testinfra_host.ansible("setup")
 
+    def get_host_os_type(self, host):
+        """Get the OS type host.
+
+        Args:
+            host (str): Hostname
+
+        Returns:
+            str: OS of the host
+        """
+        return self.get_host_variables(host).get('os_name')
+
     def collect_host_os(self, host):
         """Get the OS of the specified host.
 
@@ -126,6 +137,18 @@ class HostManager:
 
         return {'ipv4': ansible_facts['ansible_facts']['ansible_all_ipv4_addresses'],
                 'ipv6': ansible_facts['ansible_facts']['ansible_all_ipv6_addresses']}
+
+    def get_host_name_from_ip(self, host_ip):
+        """Get agent name from ip.
+        Args:
+            host_ip: Host ip (str).
+        Returns:
+            str: Host name (str).
+        """
+        list_of_hosts = self.get_group_hosts()
+        for host in list_of_hosts:
+            if self.get_host_ansible_ip(host) == host_ip:
+                return self.get_host_variables(host).get('inventory_hostname_short')
 
     def collect_host_interfaces(self, host):
         """Get the interfaces of the specified host.
